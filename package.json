@@ -1,0 +1,16 @@
+{
+  "name": "nexa-care-ecosystem",
+  "version": "1.0.0",
+  "description": "Nexa Care — AI-Driven SmartHealth Ecosystem",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "seed": "npm run seed --prefix backend",
+    "build": "npm run build --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
