@@ -1,0 +1,221 @@
+require('dotenv').config();
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const User = require('./models/User');
+const Hospital = require('./models/Hospital');
+const Bed = require('./models/Bed');
+const Patient = require('./models/Patient');
+const Inventory = require('./models/Inventory');
+const Alert = require('./models/Alert');
+
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/nexacaredb';
+
+async function seed() {
+  await mongoose.connect(MONGO_URI);
+  console.log('✅ Connected to MongoDB for seeding...\n');
+
+  // Clear existing data
+  await Promise.all([
+    User.deleteMany({}), Hospital.deleteMany({}), Bed.deleteMany({}),
+    Patient.deleteMany({}), Inventory.deleteMany({}), Alert.deleteMany({})
+  ]);
+  console.log('🗑️  Cleared existing data');
+
+  // ─── HOSPITALS ───────────────────────────────────────────────────────────
+  const hospitals = await Hospital.insertMany([
+    {
+      name: 'PHC Hadapsar', code: 'PHC-HDP', type: 'PHC', district: 'Pune', state: 'Maharashtra',
+      location: { address: 'Hadapsar, Pune', village: 'Hadapsar', tehsil: 'Haveli', pincode: '411028', lat: 18.5089, lng: 73.9260 },
+      total_beds: 20, contact_phone: '020-26876543', doctor_count: 4, nurse_count: 8,
+      attendance_log: [
+        { date: new Date(Date.now() - 2*86400000), doctors_present: 1, doctors_total: 4 },
+        { date: new Date(Date.now() - 1*86400000), doctors_present: 1, doctors_total: 4 },
+        { date: new Date(), doctors_present: 2, doctors_total: 4 }
+      ]
+    },
+    {
+      name: 'CHC Shirur', code: 'CHC-SHR', type: 'CHC', district: 'Pune', state: 'Maharashtra',
+      location: { address: 'Shirur, Pune', village: 'Shirur', tehsil: 'Shirur', pincode: '412210', lat: 18.8274, lng: 74.3677 },
+      total_beds: 30, contact_phone: '02138-222345', doctor_count: 6, nurse_count: 12,
+      attendance_log: [
+        { date: new Date(Date.now() - 2*86400000), doctors_present: 5, doctors_total: 6 },
+        { date: new Date(Date.now() - 1*86400000), doctors_present: 6, doctors_total: 6 },
+        { date: new Date(), doctors_present: 5, doctors_total: 6 }
+      ]
+    },
+    {
+      name: 'PHC Igatpuri', code: 'PHC-IGT', type: 'PHC', district: 'Nashik', state: 'Maharashtra',
+      location: { address: 'Igatpuri, Nashik', village: 'Igatpuri', tehsil: 'Igatpuri', pincode: '422403', lat: 19.6916, lng: 73.5630 },
+      total_beds: 15, contact_phone: '02553-244001', doctor_count: 3, nurse_count: 6,
+      attendance_log: [
+        { date: new Date(Date.now() - 2*86400000), doctors_present: 3, doctors_total: 3 },
+        { date: new Date(Date.now() - 1*86400000), doctors_present: 3, doctors_total: 3 },
+        { date: new Date(), doctors_present: 2, doctors_total: 3 }
+      ]
+    }
+  ]);
+  console.log(`🏥 Created ${hospitals.length} hospitals`);
+
+  // ─── BEDS ────────────────────────────────────────────────────────────────
+  const allBeds = [];
+  for (const h of hospitals) {
+    const wards = ['General', 'Deluxe', 'Super Deluxe'];
+    let bedNum = 0;
+    for (const ward of wards) {
+      const count = 20; // 20 beds each as requested
+      for (let i = 1; i <= count; i++) {
+        bedNum++;
+        allBeds.push({
+          hospital_id: h._id,
+          bed_number: `${ward.substring(0, 3).toUpperCase()}-${String(i).padStart(2,'0')}`,
+          ward,
+          status: Math.random() > 0.65 ? 'Occupied' : (Math.random() > 0.85 ? 'Maintenance' : 'Available')
+        });
+      }
+    }
+  }
+  const beds = await Bed.insertMany(allBeds);
+  console.log(`🛏️  Created ${beds.length} beds`);
+
+  // ─── PATIENTS ────────────────────────────────────────────────────────────
+  const diagnoses = ['Malaria','Typhoid','Dengue','Tuberculosis','Pneumonia','Diarrhea','Anemia','Hypertension'];
+  const names = ['Rajesh Kumar','Priya Sharma','Anil Patil','Sunita Devi','Mohan Rao','Kavita Joshi','Ramesh Gupta','Anita Singh'];
+  const occupiedBeds = beds.filter(b => b.status === 'Occupied');
+  const patients = [];
+
+  for (let i = 0; i < Math.min(occupiedBeds.length, names.length); i++) {
+    const bed = occupiedBeds[i];
+    const patient = new Patient({
+      hospital_id: bed.hospital_id,
+      name: names[i],
+      age: 20 + Math.floor(Math.random() * 60),
+      gender: i % 3 === 0 ? 'Female' : 'Male',
+      diagnosis: diagnoses[i % diagnoses.length],
+      admitted_date: new Date(Date.now() - Math.floor(Math.random() * 7) * 86400000),
+      assigned_bed_id: bed._id,
+      status: 'Admitted',
+      blood_group: ['A+','B+','O+','AB+'][i % 4],
+      attending_doctor: `Dr. ${['Mehta','Shah','Patel','Joshi'][i % 4]}`,
+      address: 'Village Rd, Maharashtra'
+    });
+    patients.push(patient);
+  }
+
+  const savedPatients = [];
+  for (const p of patients) {
+    const saved = await p.save();
+    savedPatients.push(saved);
+  }
+  console.log(`👥 Created ${savedPatients.length} patients`);
+
+  // Link patients to beds
+  for (let i = 0; i < savedPatients.length; i++) {
+    await Bed.findByIdAndUpdate(occupiedBeds[i]._id, { current_patient_id: savedPatients[i]._id });
+  }
+
+  // ─── INVENTORY ───────────────────────────────────────────────────────────
+  const medicines = [
+    { name: 'Paracetamol 500mg', cat: 'Analgesic', unit: 'strips' },
+    { name: 'Amoxicillin 250mg', cat: 'Antibiotic', unit: 'strips' },
+    { name: 'Chloroquine 250mg', cat: 'Antimalarial', unit: 'tablets' },
+    { name: 'ORS Sachets', cat: 'ORS', unit: 'sachets' },
+    { name: 'Metronidazole 400mg', cat: 'Antibiotic', unit: 'strips' },
+    { name: 'Cotrimoxazole', cat: 'Antibiotic', unit: 'tablets' },
+    { name: 'Iron + Folic Acid', cat: 'Vitamin', unit: 'strips' },
+    { name: 'Vitamin A Capsules', cat: 'Vitamin', unit: 'bottles' },
+    { name: 'Tetracycline Eye Oint', cat: 'Antibiotic', unit: 'units' },
+    { name: 'Hepatitis B Vaccine', cat: 'Vaccine', unit: 'vials' }
+  ];
+
+  const inventoryItems = [];
+  for (const h of hospitals) {
+    for (let m = 0; m < medicines.length; m++) {
+      const med = medicines[m];
+      const stock = m === 2 ? 0 : m === 4 ? 3 : 10 + Math.floor(Math.random() * 90);
+      const threshold = 10;
+      const usageLog = Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 86400000),
+        quantity_used: Math.floor(Math.random() * 5) + 1
+      }));
+
+      inventoryItems.push({
+        hospital_id: h._id,
+        medicine_name: med.name,
+        category: med.cat,
+        batch_number: `BT-${Date.now()}-${m}`,
+        current_stock: stock,
+        unit: med.unit,
+        minimum_threshold: threshold,
+        expiry_date: new Date(Date.now() + (m === 9 ? 30 : 365) * 86400000),
+        zero_stock_since: stock === 0 ? new Date(Date.now() - 72 * 60 * 60 * 1000) : null,
+        usage_log: usageLog
+      });
+    }
+  }
+  await Inventory.insertMany(inventoryItems);
+  console.log(`💊 Created ${inventoryItems.length} inventory items`);
+
+  // ─── ALERTS ──────────────────────────────────────────────────────────────
+  await Alert.insertMany([
+    {
+      hospital_id: hospitals[0]._id,
+      type: 'Stock-Out', severity: 'Critical', is_resolved: false,
+      message: '🔴 Chloroquine 250mg has been out of stock for 72 hours at PHC Hadapsar. Urgent resupply needed.',
+      metadata: { medicine_name: 'Chloroquine 250mg', hospital_name: 'PHC Hadapsar' }
+    },
+    {
+      hospital_id: hospitals[0]._id,
+      type: 'Underperformance', severity: 'High', is_resolved: false,
+      message: '⚠️ Doctor attendance has been below 50% for 3 consecutive days at PHC Hadapsar.',
+      metadata: { hospital_name: 'PHC Hadapsar' }
+    },
+    {
+      hospital_id: hospitals[1]._id,
+      type: 'Low-Stock', severity: 'Medium', is_resolved: false,
+      message: '🟡 Metronidazole 400mg stock critically low at CHC Shirur (3 strips remaining).',
+      metadata: { medicine_name: 'Metronidazole 400mg', hospital_name: 'CHC Shirur' }
+    },
+    {
+      hospital_id: hospitals[2]._id,
+      type: 'AI-Forecast', severity: 'Medium', is_resolved: false,
+      message: '🤖 AI Prediction: ORS Sachets expected to run out in 4 days at PHC Igatpuri based on current usage trends.',
+      metadata: { medicine_name: 'ORS Sachets', days_remaining: 4, hospital_name: 'PHC Igatpuri' }
+    }
+  ]);
+  console.log(`🚨 Created seed alerts`);
+
+  // ─── USERS ───────────────────────────────────────────────────────────────
+  const users = [
+    { name: 'District Admin', email: 'admin@nexacare.gov.in', password_hash: 'Admin@123', role: 'District_Admin', district: 'Pune' },
+    { name: 'Dr. Ramesh Patil', email: 'phc1@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[0]._id, district: 'Pune' },
+    { name: 'Receptionist Anjali', email: 'reception@nexacare.gov.in', password_hash: 'Rec@123', role: 'Receptionist', hospital_id: hospitals[0]._id, district: 'Pune' },
+    { name: 'Inventory Manager Rohit', email: 'inventory@nexacare.gov.in', password_hash: 'Inv@123', role: 'Inventory_Manager', hospital_id: hospitals[0]._id, district: 'Pune' },
+    { name: 'Dr. Mehta', email: 'mehta@nexacare.gov.in', password_hash: 'Doc@123', role: 'Doctor', hospital_id: hospitals[0]._id, district: 'Pune' },
+    { name: 'Dr. Shah', email: 'shah@nexacare.gov.in', password_hash: 'Doc@123', role: 'Doctor', hospital_id: hospitals[0]._id, district: 'Pune' },
+    { name: 'Dr. Sunita Joshi', email: 'phc2@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[1]._id, district: 'Pune' },
+    { name: 'Dr. Anil Shinde', email: 'phc3@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[2]._id, district: 'Nashik' }
+  ];
+
+  for (const u of users) {
+    const user = new User(u);
+    await user.save();
+  }
+  console.log(`👤 Created ${users.length} users`);
+
+  console.log('\n✅ ─── SEEDING COMPLETE ───');
+  console.log('🔑 Demo Credentials:');
+  console.log('   Admin:        admin@nexacare.gov.in / Admin@123');
+  console.log('   PHC Manager:  phc1@nexacare.gov.in / PHC@123');
+  console.log('   Receptionist: reception@nexacare.gov.in / Rec@123');
+  console.log('   Inventory:    inventory@nexacare.gov.in / Inv@123');
+  console.log('   Doctor:       mehta@nexacare.gov.in / Doc@123\n');
+
+  await mongoose.disconnect();
+  process.exit(0);
+}
+
+seed().catch(err => {
+  console.error('❌ Seed failed:', err);
+  process.exit(1);
+});
