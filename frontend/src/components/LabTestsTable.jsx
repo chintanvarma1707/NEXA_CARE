@@ -1,262 +1,314 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Beaker, CheckCircle2, Clock, Thermometer, X } from 'lucide-react';
+import { Activity, Beaker, CheckCircle2, Clock, Thermometer, FlaskConical, Dna, Microscope, Zap, AlertTriangle, FileBarChart, Crosshair } from 'lucide-react';
 
-const TABS = [
-  { id: 'b1', title: 'B1 — Laboratory', free: 2, busy: 3 },
-  { id: 'g', title: 'G — OPD & Emergency', free: 1, busy: 5 },
-  { id: '1f', title: '1F — General Wards', free: 1, busy: 5 },
-  { id: '2f', title: '2F — ICU & Special', free: 0, busy: 4 },
-  { id: '3f', title: '3F — OT & Recovery', free: 2, busy: 3 },
-];
-
-const ROOMS = [
+const DEPARTMENTS = [
   {
-    id: 'B1', name: 'Pathology Lab', type: 'Laboratory', status: 'Occupied',
-    desc: 'Processing 12 samples', doctor: 'Dr. S. Iyer (Lab)'
+    id: 'PATH-01', name: 'Pathology Center', type: 'Clinical', status: 'Processing', load: 75,
+    icon: Microscope, color: 'from-blue-500/20 to-indigo-500/20', border: 'border-blue-500/30', text: 'text-blue-400',
+    desc: '12 samples running', doctor: 'Dr. S. Iyer'
   },
   {
-    id: 'B2', name: 'Radiology / X-Ray', type: 'Imaging', status: 'Occupied',
-    desc: 'Chest X-ray in progress', doctor: 'Dr. K. Pillai (Rad)'
+    id: 'RAD-02', name: 'Radiology & X-Ray', type: 'Imaging', status: 'Scanning', load: 45,
+    icon: Activity, color: 'from-purple-500/20 to-fuchsia-500/20', border: 'border-purple-500/30', text: 'text-purple-400',
+    desc: 'Chest X-ray in progress', doctor: 'Dr. K. Pillai'
   },
   {
-    id: 'B3', name: 'Blood Bank', type: 'Lab', status: 'Available',
-    desc: 'Idle — 14 units in stock', doctor: ''
+    id: 'BLD-03', name: 'Blood Bank', type: 'Storage', status: 'Optimal', load: 85,
+    icon: Thermometer, color: 'from-red-500/20 to-rose-500/20', border: 'border-red-500/30', text: 'text-red-400',
+    desc: '14 units of O-ve available', doctor: 'Automated'
   },
   {
-    id: 'B4', name: 'Microbiology Lab', type: 'Laboratory', status: 'Occupied',
-    desc: 'Culture incubation active', doctor: ''
+    id: 'MIC-04', name: 'Microbiology', type: 'Incubation', status: 'Active', load: 60,
+    icon: Dna, color: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30', text: 'text-emerald-400',
+    desc: 'Culture incubation active', doctor: 'Dr. R. Desai'
   },
   {
-    id: 'B5', name: 'Sample Collection', type: 'Collection', status: 'Available',
-    desc: '4 samples collected today', doctor: ''
-  },
-  {
-    id: 'B6', name: 'Cold Storage', type: 'Storage', status: 'Maintenance',
-    desc: 'Compressor repair underway', doctor: ''
+    id: 'CHM-05', name: 'Biochemistry', type: 'Analysis', status: 'Standby', load: 10,
+    icon: FlaskConical, color: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30', text: 'text-amber-400',
+    desc: 'Analyzer awaiting samples', doctor: 'Dr. M. Khan'
   }
 ];
 
-const MOCK_QUEUE = [
+const INITIAL_QUEUE = [
   {
-    id: 'PHC-2026-0061', name: 'Om Prakash', age: 71, doctor: 'Dr. Vikram Singh', time: '08:15',
-    priority: 'STAT', tests: ['Troponin I', 'D-Dimer', 'PT/INR', 'ABG'], status: 'in-progress'
+    id: 'SMPL-9942', name: 'Om Prakash', age: 71, time: '08:15 AM',
+    priority: 'STAT', tests: ['Troponin I', 'ABG'], status: 'in-progress',
+    progress: 65, dept: 'Biochemistry'
   },
   {
-    id: 'PHC-2026-0051', name: 'Baby Priya', age: 2, doctor: 'Dr. Sunita Rao', time: '09:00',
-    priority: 'URGENT', tests: ['CBC', 'CRP', 'Blood Culture', 'Malaria'], status: 'in-progress'
+    id: 'SMPL-9943', name: 'Baby Priya', age: 2, time: '09:00 AM',
+    priority: 'URGENT', tests: ['CBC', 'CRP'], status: 'in-progress',
+    progress: 30, dept: 'Pathology Center'
   },
   {
-    id: 'PHC-2026-0071', name: 'Kavita Sharma', age: 28, doctor: 'Dr. Ananya Das', time: '10:00',
-    priority: 'URGENT', tests: ['CTG', 'Biophysical Profile', 'Hb'], status: 'in-progress'
-  },
-  {
-    id: 'PHC-2026-0041', name: 'Ramesh Kumar', age: 54, doctor: 'Dr. Priya Menon', time: '07:30',
-    priority: 'ROUTINE', tests: ['CBC', 'Lipid Profile', 'HbA1c', 'FBS'], status: 'completed',
-    result: 'LDL 148 mg/dL (High) · HbA1c 7.8% · FBS 142 mg/dL'
-  },
-  {
-    id: 'PHC-2026-0031', name: 'Meena Joshi', age: 45, doctor: 'Dr. Rahul Verma', time: '09:45',
-    priority: 'ROUTINE', tests: ['Urine R/M', 'Blood Group & RH', 'USG'], status: 'completed',
-    result: 'Blood Group O+ve · Urine normal · USG — appendix visualised'
+    id: 'SMPL-9944', name: 'Kavita Sharma', age: 28, time: '10:00 AM',
+    priority: 'ROUTINE', tests: ['Lipid Profile', 'HbA1c'], status: 'pending',
+    progress: 0, dept: 'Pathology Center'
   }
 ];
 
 export default function LabTestsTable() {
-  const [activeTab, setActiveTab] = useState('b1');
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [queue, setQueue] = useState(MOCK_QUEUE);
+  const [queue, setQueue] = useState(INITIAL_QUEUE);
+  const [activeDept, setActiveDept] = useState('All');
+  const [analyzingId, setAnalyzingId] = useState(null);
 
-  const handleComplete = (id) => {
-    setQueue(prev => prev.map(q => q.id === id ? { ...q, status: 'completed', result: 'Results automatically synced via LIS.' } : q));
+  // Simulate progress updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQueue(prev => prev.map(q => {
+        if (q.status === 'in-progress' && q.progress < 100 && q.id !== analyzingId) {
+          const newProg = q.progress + Math.floor(Math.random() * 5);
+          if (newProg >= 100) {
+            return { ...q, progress: 100, status: 'completed', result: 'Auto-verified: Normal range' };
+          }
+          return { ...q, progress: newProg };
+        }
+        return q;
+      }));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [analyzingId]);
+
+  const handleAnalyze = (id) => {
+    setAnalyzingId(id);
+    setQueue(prev => prev.map(q => q.id === id ? { ...q, status: 'in-progress' } : q));
+    
+    // Fast forward completion
+    let simProgress = 0;
+    const sim = setInterval(() => {
+      simProgress += 20;
+      setQueue(prev => prev.map(q => q.id === id ? { ...q, progress: Math.min(simProgress, 100) } : q));
+      if (simProgress >= 100) {
+        clearInterval(sim);
+        setQueue(prev => prev.map(q => q.id === id ? { ...q, status: 'completed', result: 'Analysis Complete: Ready for Review' } : q));
+        setAnalyzingId(null);
+      }
+    }, 500);
   };
 
+  const filteredQueue = activeDept === 'All' ? queue : queue.filter(q => q.dept === activeDept);
+
   return (
-    <div className="flex flex-col space-y-6 h-full text-slate-800 dark:text-white">
-      {/* Tabs */}
-      <div className="flex overflow-x-auto scrollbar-hide gap-3 pb-2 border-b border-white/10 dark:border-white/10 border-slate-200">
-        {TABS.map(tab => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-shrink-0 flex flex-col items-start px-4 py-2.5 rounded-xl border transition-all ${
-                isActive 
-                  ? 'bg-primary-600/10 border-primary-500 shadow-[0_0_15px_rgba(20,184,138,0.15)] dark:bg-primary-500/20'
-                  : 'glass-card-sm hover:border-primary-500/50'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {isActive && <Beaker className="w-4 h-4 text-primary-500" />}
-                <span className={`text-sm font-bold ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-white/70'}`}>
-                  {tab.title}
-                </span>
-              </div>
-              <div className="text-[11px] font-medium mt-0.5 text-slate-500 dark:text-white/40">
-                {tab.free} free • {tab.busy} busy
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-2">
-        <h2 className="text-xl font-bold font-display text-slate-800 dark:text-white">B1 — Laboratory</h2>
-        <p className="text-sm text-slate-500 dark:text-white/50">Diagnostic & Pathology</p>
-      </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
-        {ROOMS.map(room => {
-          const isOccupied = room.status === 'Occupied';
-          const isAvail = room.status === 'Available';
-          
-          let cardStyle = "glass-card p-5 cursor-pointer relative overflow-hidden transition-all duration-300 hover:-translate-y-1 ";
-          if (isOccupied) cardStyle += "bg-orange-50 border-orange-200 shadow-[0_4px_20px_rgba(251,146,60,0.1)] dark:bg-orange-500/10 dark:border-orange-500/30";
-          else if (isAvail) cardStyle += "hover:border-primary-400/50";
-
-          let dotColor = isOccupied ? "bg-orange-400" : isAvail ? "bg-emerald-400" : "bg-slate-400";
-          let badgeColor = isOccupied ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400" 
-                           : isAvail ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400" 
-                           : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300";
-
-          return (
-            <motion.div 
-              key={room.id}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => setSelectedRoom(room)}
-              className={cardStyle}
-            >
-              <div className={`absolute top-4 right-4 w-2 h-2 rounded-full ${dotColor}`} />
-              <div className="text-[11px] font-bold text-slate-400 dark:text-white/40 mb-1">{room.id}</div>
-              <h3 className="text-base font-bold text-slate-800 dark:text-white leading-tight">{room.name}</h3>
-              <div className="text-xs text-slate-500 dark:text-white/50 mb-3">{room.type}</div>
-              
-              <div className="text-sm font-medium text-slate-600 dark:text-white/70">{room.desc}</div>
-              {room.doctor && <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold mt-1">{room.doctor}</div>}
-              
-              <div className={`inline-block px-2.5 py-1 rounded-md text-[11px] font-bold mt-4 ${badgeColor}`}>
-                {room.status}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Detail Modal */}
-      <AnimatePresence>
-        {selectedRoom && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-900/80 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="bg-white dark:bg-[#0c1a3f] border border-orange-200 dark:border-orange-500/30 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-            >
-              <div className="p-5 flex justify-between items-start border-b border-orange-100 dark:border-white/10 bg-orange-50/50 dark:bg-white/5 relative">
-                <div>
-                  <h2 className="text-2xl font-bold font-display text-slate-800 dark:text-white">{selectedRoom.name}</h2>
-                  <p className="text-sm text-slate-500 dark:text-white/50">{selectedRoom.type} · Room {selectedRoom.id}</p>
-                </div>
-                <button onClick={() => setSelectedRoom(null)} className="p-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-slate-600 dark:text-white/70" />
-                </button>
-              </div>
-
-              <div className="p-5 flex gap-4 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-transparent">
-                <div className="bg-slate-200/50 dark:bg-white/5 px-4 py-2.5 rounded-xl">
-                  <div className="text-[11px] text-slate-500 dark:text-white/40 uppercase tracking-wider font-semibold mb-1">Status</div>
-                  <div className="text-sm font-bold text-orange-600 dark:text-orange-400">{selectedRoom.status}</div>
-                </div>
-                {selectedRoom.doctor && (
-                  <div className="bg-slate-200/50 dark:bg-white/5 px-4 py-2.5 rounded-xl">
-                    <div className="text-[11px] text-slate-500 dark:text-white/40 uppercase tracking-wider font-semibold mb-1">Assigned</div>
-                    <div className="text-sm font-bold text-slate-700 dark:text-white/80">{selectedRoom.doctor}</div>
-                  </div>
-                )}
-                <div className="flex-1 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-4 py-2.5 rounded-xl flex items-center gap-3">
-                  <Activity className="w-5 h-5 text-emerald-500" />
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{selectedRoom.desc}</span>
-                </div>
-              </div>
-
-              {/* Queue List */}
-              <div className="flex-1 overflow-y-auto p-5 bg-white dark:bg-transparent">
-                <h4 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-white/10">
-                  <Beaker className="w-4 h-4 text-primary-500" /> Lab Test Queue
-                  <span className="ml-auto flex gap-3 text-[11px] font-semibold text-slate-500 dark:text-white/50">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" /> Stat</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /> Urgent</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400" /> Routine</span>
-                  </span>
-                </h4>
-
-                <div className="space-y-4">
-                  {queue.map(q => {
-                    const isStat = q.priority === 'STAT';
-                    const isUrgent = q.priority === 'URGENT';
-                    const isCompleted = q.status === 'completed';
-                    
-                    let badgeClass = "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/40";
-                    if (isStat) badgeClass = "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400";
-                    else if (isUrgent) badgeClass = "bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400";
-
-                    return (
-                      <div key={q.id} className="border-b border-slate-100 dark:border-white/5 pb-4 last:border-0 last:pb-0">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[11px] font-mono text-slate-400 dark:text-white/40">{q.id}</span>
-                              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase ${badgeClass}`}>
-                                {q.priority}
-                              </span>
-                            </div>
-                            <div className="font-bold text-slate-800 dark:text-white">
-                              {q.name} <span className="text-slate-400 dark:text-white/40 text-sm font-normal">({q.age}y)</span>
-                            </div>
-                            <div className="text-xs text-slate-500 dark:text-white/50">{q.doctor} · {q.time}</div>
-                          </div>
-                          <div className="text-right">
-                            {isCompleted ? (
-                              <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle2 className="w-4 h-4" /> completed
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-xs font-bold text-orange-500 dark:text-orange-400">
-                                <Clock className="w-4 h-4" /> in progress
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-3 mt-3">
-                          {q.tests.map(test => (
-                            <span key={test} className="px-2.5 py-1 bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 text-xs font-semibold rounded-md">
-                              {test}
-                            </span>
-                          ))}
-                        </div>
-
-                        {!isCompleted ? (
-                          <button onClick={() => handleComplete(q.id)} className="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow-sm">
-                            Mark Completed
-                          </button>
-                        ) : (
-                          <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 text-xs font-medium p-3 rounded-lg flex items-start gap-2 border border-emerald-100 dark:border-emerald-500/20">
-                            <CheckCircle2 className="w-4 h-4 mt-0.5 opacity-70" />
-                            <span className="leading-relaxed"><strong>Result:</strong> {q.result}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
+    <div className="flex flex-col space-y-6 h-full text-slate-800 dark:text-white pb-10">
+      
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary-500/20 rounded-xl"><Beaker className="w-6 h-6 text-primary-400" /></div>
+            <div>
+              <div className="text-2xl font-bold font-display">124</div>
+              <div className="text-sm font-medium opacity-60">Samples Today</div>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+        
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-500/20 rounded-xl"><Clock className="w-6 h-6 text-blue-400" /></div>
+            <div>
+              <div className="text-2xl font-bold font-display">42 min</div>
+              <div className="text-sm font-medium opacity-60">Avg Turnaround</div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5 relative overflow-hidden group border-red-500/30">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-500 animate-ping" />
+          <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-500" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-red-500/20 rounded-xl"><Zap className="w-6 h-6 text-red-400" /></div>
+            <div>
+              <div className="text-2xl font-bold font-display text-red-400">1 STAT</div>
+              <div className="text-sm font-medium opacity-60">Critical Priority</div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Main Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Col: Departments Grid */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="section-title">
+              <Crosshair className="w-5 h-5 text-primary-400" />
+              Department Clusters
+            </h2>
+            <div className="flex gap-2">
+              <button onClick={() => setActiveDept('All')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${activeDept === 'All' ? 'bg-primary-500 text-white' : 'glass-card-sm text-slate-500 hover:text-slate-700 dark:text-white/60 dark:hover:text-white'}`}>ALL</button>
+              {DEPARTMENTS.map(d => (
+                <button key={d.id} onClick={() => setActiveDept(d.name)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${activeDept === d.name ? 'bg-primary-500 text-white' : 'glass-card-sm text-slate-500 hover:text-slate-700 dark:text-white/60 dark:hover:text-white'}`}>
+                  {d.name.split(' ')[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {DEPARTMENTS.map((dept, idx) => (
+              <motion.div 
+                key={dept.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                onClick={() => setActiveDept(dept.name)}
+                className={`glass-card p-5 relative overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 ${activeDept === dept.name ? 'ring-2 ring-primary-500 shadow-[0_0_20px_rgba(20,184,138,0.2)]' : ''}`}
+              >
+                {/* Background Gradient & Pattern */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${dept.color} opacity-20`} />
+                <div className="absolute -right-4 -top-4 opacity-5 mix-blend-overlay">
+                  <dept.icon className="w-32 h-32" />
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`p-2.5 rounded-xl bg-white/10 dark:bg-black/20 backdrop-blur-md border ${dept.border} ${dept.text}`}>
+                      <dept.icon className="w-5 h-5" />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-mono tracking-widest opacity-50 mb-1">{dept.id}</div>
+                      <div className={`text-xs font-bold uppercase tracking-wider ${dept.status === 'Processing' || dept.status === 'Scanning' ? 'text-emerald-500 animate-pulse' : dept.status === 'Active' ? 'text-blue-500' : 'text-slate-400'}`}>
+                        {dept.status}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-bold font-display leading-tight mb-1">{dept.name}</h3>
+                  <p className="text-sm font-medium opacity-60 mb-4 h-5">{dept.desc}</p>
+                  
+                  {/* Capacity Bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span className="opacity-50">Operational Load</span>
+                      <span className={dept.text}>{dept.load}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden flex">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${dept.load}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className={`h-full rounded-full ${dept.load > 80 ? 'bg-red-500' : dept.load > 50 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Col: Live Queue */}
+        <div className="glass-card p-0 flex flex-col h-[600px] overflow-hidden border-primary-500/20 shadow-[0_0_30px_rgba(20,184,138,0.05)]">
+          <div className="p-5 border-b border-white/10 bg-gradient-to-r from-transparent to-primary-500/5">
+            <h2 className="section-title text-lg mb-1">
+              <Activity className="w-5 h-5 text-primary-400" />
+              Live Test Queue
+            </h2>
+            <p className="text-xs font-medium opacity-50">Real-time LIS Sync active</p>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            <AnimatePresence>
+              {filteredQueue.map((q) => {
+                const isStat = q.priority === 'STAT';
+                const isCompleted = q.status === 'completed';
+                const isAnalyzing = q.id === analyzingId;
+
+                return (
+                  <motion.div 
+                    key={q.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    layout
+                    className={`p-4 rounded-xl border relative overflow-hidden ${
+                      isCompleted ? 'bg-emerald-500/5 border-emerald-500/20' 
+                      : isStat ? 'bg-red-500/5 border-red-500/30' 
+                      : 'glass-card-sm'
+                    }`}
+                  >
+                    {/* Progress Bar Background */}
+                    {!isCompleted && q.progress > 0 && (
+                      <div 
+                        className="absolute inset-y-0 left-0 bg-primary-500/10 transition-all duration-500 ease-out z-0" 
+                        style={{ width: `${q.progress}%` }} 
+                      />
+                    )}
+
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] tracking-widest opacity-40">||||| {q.id}</span>
+                          <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-md ${
+                            isStat ? 'bg-red-500 text-white animate-pulse' 
+                            : q.priority === 'URGENT' ? 'bg-orange-500 text-white' 
+                            : 'bg-slate-200 text-slate-700 dark:bg-white/20 dark:text-white'
+                          }`}>
+                            {q.priority}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold opacity-40 flex items-center gap-1"><Clock className="w-3 h-3" /> {q.time}</span>
+                      </div>
+                      
+                      <h4 className="font-bold text-[15px] mb-0.5">{q.name} <span className="text-xs font-normal opacity-50">({q.age}y)</span></h4>
+                      <p className="text-xs font-semibold opacity-60 text-primary-600 dark:text-primary-400 mb-3">{q.dept}</p>
+                      
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {q.tests.map(t => (
+                          <span key={t} className="px-2 py-1 bg-slate-200/50 text-slate-700 dark:bg-black/20 dark:text-white/80 text-[10px] font-bold rounded">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+
+                      {isCompleted ? (
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-lg">
+                          <CheckCircle2 className="w-4 h-4" /> {q.result}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 mr-4">
+                            <div className="flex justify-between text-[10px] font-bold mb-1 opacity-50">
+                              <span>{isAnalyzing ? 'Analyzing...' : 'In Queue'}</span>
+                              <span>{q.progress}%</span>
+                            </div>
+                            <div className="w-full h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                              <div className="h-full bg-primary-500 transition-all duration-300" style={{ width: `${q.progress}%` }} />
+                            </div>
+                          </div>
+                          {q.progress === 0 && !isAnalyzing && (
+                            <button onClick={() => handleAnalyze(q.id)} className="shrink-0 px-3 py-1.5 bg-primary-500 hover:bg-primary-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1 transition-all">
+                              <Activity className="w-3 h-3" /> Run
+                            </button>
+                          )}
+                          {isAnalyzing && (
+                            <div className="shrink-0 px-3 py-1.5 bg-primary-500/20 text-primary-500 text-[10px] font-bold uppercase tracking-wider rounded-lg flex items-center gap-1.5">
+                              <div className="w-3 h-3 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                              Running
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+            {filteredQueue.length === 0 && (
+              <div className="text-center py-10 opacity-30">
+                <FileBarChart className="w-10 h-10 mx-auto mb-2" />
+                <p className="text-sm font-bold">No active tests in this department</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BedDouble, Users, Package, Bell, Activity,
-  LogOut, Menu, X, Globe, ChevronRight, Settings, Moon, Sun, Beaker
+  LogOut, Menu, X, Globe, ChevronRight, Settings, Moon, Sun, Beaker, ShieldAlert
 } from 'lucide-react';
 import { useSmartHealth } from '../context/SmartHealthContext';
 
 const LANGUAGES = [
   { code: 'en', label: 'EN', name: 'English' },
   { code: 'hi', label: 'हि', name: 'Hindi' },
-  { code: 'mr', label: 'म', name: 'Marathi' }
+  { code: 'gu', label: 'ગુ', name: 'Gujarati' }
 ];
 
 export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unreadAlerts = 0 }) {
@@ -17,13 +17,16 @@ export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unre
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const isCHC = user?.hospital_id?.type === 'CHC';
+
   const phcNav = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
-    { id: 'beds', icon: BedDouble, label: t('bedManagement') },
+    { id: 'beds', icon: BedDouble, label: isCHC ? t('icuWards') : t('bedManagement') },
     { id: 'patients', icon: Users, label: t('patients') },
     { id: 'inventory', icon: Package, label: t('inventory') },
-    { id: 'lab_tests', icon: Beaker, label: 'Lab Tests' },
-    { id: 'alerts', icon: Bell, label: t('alerts'), badge: unreadAlerts },
+    { id: 'lab_tests', icon: Beaker, label: t('labTests') },
+    { id: 'logistics', icon: Package, label: t('transfersLogistics') },
+    { id: 'referrals', icon: Activity, label: isCHC ? t('incomingReferrals') : t('patientReferrals') },
     { id: 'attendance', icon: Activity, label: t('attendance') },
   ];
 
@@ -33,6 +36,7 @@ export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unre
     { id: 'alerts', icon: Bell, label: t('alerts'), badge: unreadAlerts },
     { id: 'inventory', icon: Package, label: t('inventory') },
     { id: 'redistribution', icon: Globe, label: t('redistribution') },
+    { id: 'flagged', icon: ShieldAlert, label: '🚨 Flagged' },
   ];
 
   let navItems = isAdmin ? adminNav : phcNav;
@@ -40,7 +44,7 @@ export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unre
     if (user.role === 'Receptionist') {
       navItems = phcNav.filter(i => ['dashboard', 'beds', 'patients'].includes(i.id));
     } else if (user.role === 'Inventory_Manager') {
-      navItems = phcNav.filter(i => ['dashboard', 'inventory', 'lab_tests', 'alerts'].includes(i.id));
+      navItems = phcNav.filter(i => ['dashboard', 'inventory', 'lab_tests'].includes(i.id));
     }
   }
 
@@ -48,8 +52,8 @@ export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unre
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={`flex items-center gap-3 p-5 border-b border-white/10 ${collapsed && !mobileOpen ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 rounded-xl bg-primary-500/20 border border-primary-500/40 flex items-center justify-center flex-shrink-0">
-          <Activity className="w-4 h-4 text-primary-400" />
+        <div className="w-9 h-9 rounded-xl bg-white border border-primary-500/40 flex items-center justify-center flex-shrink-0 overflow-hidden p-0.5">
+          <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
         </div>
         {(!collapsed || mobileOpen) && (
           <div>
@@ -65,7 +69,7 @@ export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unre
           <div className={`text-xs font-semibold px-3 py-1.5 rounded-lg text-center ${
             isAdmin ? 'bg-accent-500/20 text-accent-500 border border-accent-500/30' : 'bg-primary-500/15 text-primary-400 border border-primary-500/25'
           }`}>
-            {isAdmin ? '🏛️ District Admin' : `🏥 ${user?.role?.replace('_', ' ') || 'PHC Manager'}`}
+            {isAdmin ? '🏛️ District Admin' : `🏥 ${isCHC ? 'CHC Manager' : (user?.role?.replace('_', ' ') || 'PHC Manager')}`}
           </div>
         </div>
       )}

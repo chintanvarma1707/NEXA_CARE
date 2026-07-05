@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, AlertCircle, Bell, XCircle, CheckCircle, Clock, ChevronRight } from 'lucide-react';
 import { useSmartHealth } from '../context/SmartHealthContext';
@@ -12,11 +12,20 @@ const ALERT_CONFIG = {
   'Expiry-Warning': { icon: Clock, color: 'border-yellow-500/40 bg-yellow-500/8', iconColor: 'text-yellow-400', badge: 'badge-warning' },
 };
 
-export default function AlertCards({ alerts = [], onResolve, showHospital = false }) {
+export default function AlertCards({ alerts = [], onResolve, onResolveAll, showHospital = false }) {
   const { t } = useSmartHealth();
+  const [filterSeverity, setFilterSeverity] = useState('All');
 
-  const active = alerts.filter(a => !a.is_resolved);
-  const resolved = alerts.filter(a => a.is_resolved);
+  const active = alerts.filter(a => {
+    if (a.is_resolved) return false;
+    if (filterSeverity !== 'All' && a.severity !== filterSeverity) return false;
+    return true;
+  });
+  const resolved = alerts.filter(a => {
+    if (!a.is_resolved) return false;
+    if (filterSeverity !== 'All' && a.severity !== filterSeverity) return false;
+    return true;
+  });
 
   if (alerts.length === 0) {
     return (
@@ -30,6 +39,29 @@ export default function AlertCards({ alerts = [], onResolve, showHospital = fals
 
   return (
     <div className="space-y-4">
+      {/* Controls */}
+      {alerts.some(a => !a.is_resolved) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex flex-wrap gap-2">
+            {['All', 'Critical', 'High', 'Medium', 'Low'].map(s => (
+              <button key={s} onClick={() => setFilterSeverity(s)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterSeverity === s ? 'bg-primary-500 text-white' : 'glass-card-sm text-white/50 hover:text-white'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
+          {onResolveAll && active.some(a => a.type === 'Restock-Request') && (
+            <button
+              onClick={() => onResolveAll(filterSeverity)}
+              className="btn-primary bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 border-none text-xs px-4 py-1.5 flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Accept All Restocks
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Active */}
       {active.length > 0 && (
         <div>

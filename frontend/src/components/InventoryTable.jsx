@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, TrendingDown, TrendingUp, Minus, AlertTriangle, Plus, RefreshCw, CheckCircle2, X } from 'lucide-react';
+import { Package, TrendingDown, TrendingUp, Minus, AlertTriangle, Plus, RefreshCw, CheckCircle2, X, BrainCircuit, BellRing, Clock } from 'lucide-react';
 import { useSmartHealth } from '../context/SmartHealthContext';
 
 const STOCK_COLORS = {
@@ -126,13 +126,132 @@ function RequestModal({ item, onClose, onRequest, setToast }) {
   );
 }
 
-export default function InventoryTable({ items = [], onUpdate, onRestock, onRequest, onDelete, readOnly = false }) {
-  const { t } = useSmartHealth();
+function LogUsageModal({ item, onClose, onLogUsage, setToast, patients = [], doctors = [] }) {
+  const [qty, setQty] = useState('');
+  const [usedFor, setUsedFor] = useState('');
+  const [prescribedBy, setPrescribedBy] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const presentDoctors = doctors.filter(d => d.today_status === 'Present');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!qty || parseInt(qty) <= 0) return;
+    if (parseInt(qty) > item.current_stock) {
+      setToast({ type: 'error', title: 'Invalid Quantity', message: 'Cannot log more than current stock.' });
+      return;
+    }
+    setLoading(true);
+    try {
+      await onLogUsage(item._id, { 
+        quantity_used: parseInt(qty), 
+        used_for: usedFor, 
+        prescribed_by: prescribedBy 
+      });
+      setToast({ type: 'success', title: 'Usage Logged', message: `${qty} units logged successfully.` });
+      onClose();
+    } catch (err) {
+      console.error(err);
+      setToast({ type: 'error', title: 'Logging Failed', message: err.message || 'Failed to log usage.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.92 }}
+        className="glass-card w-full max-w-sm mx-4 p-6"
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="section-title mb-1 text-blue-400">Log Stock Usage</h3>
+        <p className="text-sm text-white/50 mb-5">{item.medicine_name} (Avail: {item.current_stock})</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-white/60 mb-1.5">Quantity Used *</label>
+            <input type="number" min="1" max={item.current_stock} value={qty} onChange={e => setQty(e.target.value)} className="input-glass" required />
+          </div>
+          <div>
+            <label className="block text-sm text-white/60 mb-1.5">Used For (Patient/Ward) *</label>
+            <select value={usedFor} onChange={e => setUsedFor(e.target.value)} className="input-glass" required>
+              <option value="" className="text-slate-800">— Select Patient or Ward —</option>
+              {patients.map(p => (
+                <option key={p._id} value={`Patient: ${p.name}`} className="text-slate-800">Patient: {p.name} {p.assigned_bed_id ? `(Bed ${p.assigned_bed_id.bed_number})` : ''}</option>
+              ))}
+              <option value="General Ward" className="text-slate-800">General Ward</option>
+              <option value="Emergency" className="text-slate-800">Emergency</option>
+              <option value="ICU" className="text-slate-800">ICU</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm text-white/60 mb-1.5">Prescribed By (Optional)</label>
+            <select value={prescribedBy} onChange={e => setPrescribedBy(e.target.value)} className="input-glass">
+              <option value="" className="text-slate-800">— Select Doctor —</option>
+              {presentDoctors.map(d => (
+                <option key={d._id} value={d.name} className="text-slate-800">{d.name} ({d.specialization})</option>
+              ))}
+            </select>
+            {presentDoctors.length === 0 && (
+              <div className="text-xs text-red-400 mt-1">No doctors currently present!</div>
+            )}
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="btn-glass flex-1">Cancel</button>
+            <button type="submit" disabled={loading} className="btn-primary bg-blue-500 hover:bg-blue-600 border-blue-500/50 flex-1">
+              Submit Log
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+export default function InventoryTable({ items = [], onUpdate, onRestock, onRequest, onLogUsage, onDelete, readOnly = false, forecasts = [], patients = [], doctors = [] }) {
+  const { t, runAIStockCheck, getAlerts, user } = useSmartHealth();
   const [restockItem, setRestockItem] = useState(null);
   const [requestItem, setRequestItem] = useState(null);
+  const [usageItem, setUsageItem] = useState(null);
   const [toast, setToast] = useState(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (showHistory) {
+      setHistoryLoading(true);
+      getAlerts({ type: 'Restock-Approved' })
+        .then(res => setHistory(res || []))
+        .catch(console.error)
+        .finally(() => setHistoryLoading(false));
+    }
+  }, [showHistory]);
+
+  const handleRunAI = async () => {
+    const hId = user?.hospital_id?._id || user?.hospital_id;
+    if (!hId) return;
+    setAiLoading(true);
+    try {
+      const res = await runAIStockCheck(hId);
+      setToast({ 
+        type: 'success', 
+        title: 'AI Analysis Complete', 
+        message: `AI scanned all medicines. Generated ${res.requestsGenerated} automated restock requests for 500 units each.` 
+      });
+      setTimeout(() => setToast(null), 7000);
+    } catch (err) {
+      setToast({ type: 'error', title: 'AI Error', message: err.message || 'Failed to run AI check' });
+      setTimeout(() => setToast(null), 5000);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const filtered = items.filter(item => {
     const matchSearch = item.medicine_name.toLowerCase().includes(search.toLowerCase());
@@ -190,22 +309,44 @@ export default function InventoryTable({ items = [], onUpdate, onRestock, onRequ
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={`${t('search')} medicine...`}
-          className="input-glass max-w-xs py-2"
-        />
-        <div className="flex gap-2">
-          {['All', 'Good', 'Low', 'Critical'].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filterStatus === s ? 'bg-primary-500 text-white' : 'glass-card-sm text-white/50 hover:text-white'}`}>
-              {s}
-            </button>
-          ))}
+      {/* Filters & Actions */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={`${t('search')} medicine...`}
+            className="input-glass max-w-xs py-2"
+          />
+          <div className="flex gap-2">
+            {['All', 'Good', 'Low', 'Critical'].map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filterStatus === s ? 'bg-primary-500 text-white' : 'glass-card-sm text-white/50 hover:text-white'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
+        {!readOnly && (
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowHistory(true)}
+              className="btn-glass text-xs px-4 py-1.5 flex items-center gap-1.5"
+            >
+              <BellRing className="w-4 h-4 text-blue-400" />
+              Restock History
+            </button>
+            <button 
+              onClick={handleRunAI} 
+              disabled={aiLoading}
+              className="btn-primary bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 border-none shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2"
+            >
+              {aiLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <BrainCircuit className="w-4 h-4" />}
+              Run AI Stock Analysis
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -219,6 +360,7 @@ export default function InventoryTable({ items = [], onUpdate, onRestock, onRequ
                 <th>{t('currentStock')}</th>
                 <th>Stock Level</th>
                 <th>{t('minThreshold')}</th>
+                <th>AI Forecast</th>
                 <th>{t('expiryDate')}</th>
                 <th>{t('stockStatus')}</th>
                 {!readOnly && <th>Actions</th>}
@@ -232,6 +374,8 @@ export default function InventoryTable({ items = [], onUpdate, onRestock, onRequ
                 const daysToExpiry = expiryDate ? Math.floor((expiryDate - new Date()) / (1000 * 60 * 60 * 24)) : null;
                 const isExpiringSoon = daysToExpiry !== null && daysToExpiry <= 4 && daysToExpiry >= 0;
                 const isExpired = daysToExpiry !== null && daysToExpiry < 0;
+
+                const forecast = forecasts.find(f => f.medicine_name === item.medicine_name);
 
                 return (
                   <motion.tr
@@ -269,6 +413,17 @@ export default function InventoryTable({ items = [], onUpdate, onRestock, onRequ
                     </td>
                     <td className="text-white/60">{item.minimum_threshold} {item.unit}</td>
                     <td>
+                      {forecast && forecast.days_to_stockout !== undefined ? (
+                        <div className="flex items-center gap-1">
+                          <span className={`font-semibold ${forecast.days_to_stockout <= 7 ? 'text-red-400' : forecast.days_to_stockout <= 14 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                            {forecast.days_to_stockout} days
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-white/30 text-xs">—</span>
+                      )}
+                    </td>
+                    <td>
                       {expiryDate ? (
                         <span className={(isExpiringSoon || isExpired) ? 'text-orange-400 font-semibold' : 'text-white/50'}>
                           {(isExpiringSoon || isExpired) && <AlertTriangle className="w-3 h-3 inline mr-1" />}
@@ -298,6 +453,15 @@ export default function InventoryTable({ items = [], onUpdate, onRestock, onRequ
                               title="Raise Request"
                             >
                               <AlertTriangle className="w-4 h-4" />
+                            </button>
+                          )}
+                          {onLogUsage && (
+                            <button
+                              onClick={() => setUsageItem(item)}
+                              className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                              title="Log Stock Usage (Out)"
+                            >
+                              <Minus className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -335,6 +499,61 @@ export default function InventoryTable({ items = [], onUpdate, onRestock, onRequ
             onRequest={onRequest} 
             setToast={(t) => { setToast(t); setTimeout(() => setToast(null), 5000); }} 
           />
+        )}
+        {usageItem && (
+          <LogUsageModal 
+            item={usageItem} 
+            onClose={() => setUsageItem(null)} 
+            onLogUsage={onLogUsage} 
+            setToast={(t) => { setToast(t); setTimeout(() => setToast(null), 5000); }} 
+            patients={patients}
+            doctors={doctors}
+          />
+        )}
+        {showHistory && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex justify-end">
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.3 }}
+              className="w-full max-w-md h-full glass-card rounded-none rounded-l-2xl border-r-0 flex flex-col"
+            >
+              <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <BellRing className="w-5 h-5 text-blue-400" />
+                  <h3 className="section-title text-lg m-0">Notification Center</h3>
+                </div>
+                <button onClick={() => setShowHistory(false)} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                {historyLoading ? (
+                  <div className="flex justify-center p-8"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
+                ) : history.length === 0 ? (
+                  <div className="text-center p-8 opacity-50">
+                    <CheckCircle2 className="w-12 h-12 mx-auto mb-3" />
+                    <p className="text-white">No restock history found.</p>
+                  </div>
+                ) : (
+                  history.map(item => (
+                    <div key={item._id} className="glass-card-sm p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span className="font-bold text-emerald-400 text-sm">{item.type}</span>
+                      </div>
+                      <p className="text-sm text-white/80 leading-relaxed mb-3">{item.message}</p>
+                      <div className="text-[11px] text-white/40 flex items-center gap-1.5 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(item.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

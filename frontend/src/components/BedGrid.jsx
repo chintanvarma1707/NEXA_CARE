@@ -65,10 +65,10 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Age', value: `${patient.age} years`, icon: User },
-              { label: 'Gender', value: patient.gender, icon: User },
-              { label: 'Blood Group', value: patient.blood_group || 'Unknown', icon: Droplets },
-              { label: 'Days Admitted', value: `${days} day${days !== 1 ? 's' : ''}`, icon: Clock },
+              { label: t('age'), value: `${patient.age} years`, icon: User },
+              { label: t('gender'), value: patient.gender, icon: User },
+              { label: t('bloodGroup'), value: patient.blood_group || 'Unknown', icon: Droplets },
+              { label: t('daysAdmitted') || 'Days Admitted', value: `${days} day${days !== 1 ? 's' : ''}`, icon: Clock },
             ].map(({ label, value }) => (
               <div key={label} className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-3">
                 <p className="text-xs text-slate-400 dark:text-white/40 font-semibold mb-1">{label}</p>
@@ -83,7 +83,7 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
                 <Stethoscope className="w-4 h-4 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-xs text-orange-600/70 dark:text-orange-400/70 font-semibold mb-1">Diagnosis / Disease</p>
+                <p className="text-xs text-orange-600/70 dark:text-orange-400/70 font-semibold mb-1">{t('diagnosis')}</p>
                 <p className="text-base font-bold text-slate-800 dark:text-white">{patient.diagnosis}</p>
               </div>
             </div>
@@ -91,13 +91,13 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-3">
-              <p className="text-xs text-slate-400 dark:text-white/40 font-semibold mb-1">Admitted Date</p>
+              <p className="text-xs text-slate-400 dark:text-white/40 font-semibold mb-1">{t('admittedDate')}</p>
               <p className="text-sm font-bold text-slate-700 dark:text-white">
                 {new Date(patient.admitted_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
               </p>
             </div>
             <div className="bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-xl p-3">
-              <p className="text-xs text-slate-400 dark:text-white/40 font-semibold mb-1">Attending Doctor</p>
+              <p className="text-xs text-slate-400 dark:text-white/40 font-semibold mb-1">{t('attendingDoctor')}</p>
               <p className="text-sm font-bold text-slate-700 dark:text-white">{patient.attending_doctor || '—'}</p>
             </div>
           </div>
@@ -111,7 +111,7 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
                 <p className="text-sm text-red-800 dark:text-red-200 font-bold mb-4">Are you sure you want to discharge {patient.name}?</p>
                 <div className="flex gap-3">
                   <button onClick={() => setShowConfirm(false)} className="flex-1 bg-white dark:bg-transparent text-slate-700 dark:text-white border border-slate-200 dark:border-white/20 hover:bg-slate-50 dark:hover:bg-white/5 py-2 rounded-lg font-bold transition-colors">
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button 
                     onClick={async () => {
@@ -120,7 +120,7 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
                     }} 
                     className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold shadow-lg transition-colors"
                   >
-                    Confirm Discharge
+                    {t('confirmDischarge') || 'Confirm Discharge'}
                   </button>
                 </div>
               </motion.div>
@@ -129,7 +129,7 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
                 onClick={() => setShowConfirm(true)} 
                 className="w-full bg-white dark:bg-transparent text-slate-700 dark:text-white border-2 border-slate-200 dark:border-white/20 hover:border-slate-300 dark:hover:border-white/40 hover:bg-slate-50 dark:hover:bg-white/5 font-bold py-3 rounded-xl transition-all shadow-sm"
               >
-                Discharge Patient
+                {t('dischargePatient')}
               </button>
             )}
           </div>
@@ -180,7 +180,7 @@ export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDisch
     else if (bed.status === 'Available' && onAssignClick) onAssignClick(bed);
   };
 
-  const WARD_ORDER = ['General', 'Deluxe', 'Super Deluxe'];
+  const WARD_ORDER = ['Emergency', 'ICU', 'Trauma', 'NICU', 'General', 'Deluxe', 'Super Deluxe'];
   const sortedWards = Object.keys(groupedBeds).sort((a, b) => {
     const ia = WARD_ORDER.indexOf(a);
     const ib = WARD_ORDER.indexOf(b);
@@ -235,14 +235,14 @@ export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDisch
                     <BedDouble className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold font-display text-slate-800 dark:text-white">{wardName} Ward</h3>
-                    <p className="text-sm text-slate-500 dark:text-white/50 font-medium">Total: {total} Beds</p>
+                    <h3 className="text-xl font-bold font-display text-slate-800 dark:text-white">{wardName} {t('ward') || 'Ward'}</h3>
+                    <p className="text-sm text-slate-500 dark:text-white/50 font-medium">{t('totalBeds')}: {total}</p>
                   </div>
                 </div>
                 
                 <div className="flex flex-col flex-1 max-w-sm sm:ml-auto">
                   <div className="flex justify-between text-sm font-bold mb-2">
-                    <span className="text-slate-600 dark:text-white/70">Occupancy</span>
+                    <span className="text-slate-600 dark:text-white/70">{t('occupancyRate')}</span>
                     <span className={percentage >= 90 ? 'text-red-500' : 'text-emerald-500'}>{Math.round(percentage)}%</span>
                   </div>
                   <div className="w-full h-3 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden flex">
@@ -252,8 +252,8 @@ export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDisch
                     />
                   </div>
                   <div className="flex justify-between text-xs mt-2 font-semibold">
-                    <span className="text-emerald-600 dark:text-emerald-400">{avail} Available</span>
-                    <span className="text-red-600 dark:text-red-400">{occupied} Occupied</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{avail} {t('bedAvailable')}</span>
+                    <span className="text-red-600 dark:text-red-400">{occupied} {t('bedOccupied')}</span>
                   </div>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDisch
                             </>
                           ) : (
                             <div className="text-sm font-bold text-slate-400 dark:text-white/40">
-                              Available
+                              {t('bedAvailable')}
                             </div>
                           )}
                         </div>
