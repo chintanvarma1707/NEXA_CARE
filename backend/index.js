@@ -13,6 +13,7 @@ const patientRoutes = require('./routes/patients');
 const inventoryRoutes = require('./routes/inventory');
 const alertRoutes = require('./routes/alerts');
 const dashboardRoutes = require('./routes/dashboard');
+const doctorRoutes = require('./routes/doctors');
 const { runUnderperformanceCheck } = require('./jobs/cronJobs');
 
 const app = express();
@@ -50,6 +51,9 @@ app.use('/api/patients', patientRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/logistics', require('./routes/logistics'));
+app.use('/api/ai', require('./routes/ai'));
 
 // Health check
 app.get('/', (req, res) => {
