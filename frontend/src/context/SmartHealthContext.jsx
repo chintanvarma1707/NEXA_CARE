@@ -127,30 +127,45 @@ export function SmartHealthProvider({ children }) {
   const updateInventory = (id, data) => api.put(`/api/inventory/${id}`, data).then(r => r.data);
   const restockInventory = (id, data) => api.post(`/api/inventory/${id}/restock`, data).then(r => r.data);
   const requestRestock = (id, data) => api.post(`/api/inventory/${id}/request`, data).then(r => r.data);
+  const logStockUsage = (id, data) => api.post(`/api/inventory/${id}/log-usage`, data).then(r => r.data);
   const deleteInventory = (id) => api.delete(`/api/inventory/${id}`).then(r => r.data);
+  const runAIStockCheck = (hospitalId) => api.post(`/api/inventory/ai-stock-check/${hospitalId}`).then(r => r.data);
 
   const getAlerts = (params) => api.get('/api/alerts', { params }).then(r => r.data);
   const resolveAlert = (id) => api.patch(`/api/alerts/${id}/resolve`).then(r => r.data);
+  const resolveAllAlerts = (severity) => api.patch(`/api/alerts/resolve-all${severity ? `?severity=${severity}` : ''}`).then(r => r.data);
 
   const getAdminDashboard = () => api.get('/api/dashboard/admin').then(r => r.data);
   const getPHCDashboard = (hospitalId) => api.get(`/api/dashboard/phc/${hospitalId}`).then(r => r.data);
 
   const logAttendance = (hospitalId, data) => api.post(`/api/hospitals/${hospitalId}/attendance`, data).then(r => r.data);
 
-  const getDoctors = (hospitalId) => api.get(`/api/auth/doctors/${hospitalId}`).then(r => r.data);
+  const getDoctors = (hospitalId) => api.get(`/api/doctors/${hospitalId}`).then(r => r.data);
 
+  // Logistics & Transfers
+  const getTransfers = (hospitalId) => api.get(`/api/logistics/transfers?hospital_id=${hospitalId}`).then(r => r.data);
+  const createTransfer = (data) => api.post('/api/logistics/transfers', data).then(r => r.data);
+  const dispatchTransfer = (id) => api.patch(`/api/logistics/transfers/${id}/dispatch`).then(r => r.data);
+  const receiveTransfer = (id) => api.patch(`/api/logistics/transfers/${id}/receive`).then(r => r.data);
+
+  // Referrals
+  const getReferrals = (hospitalId) => api.get(`/api/logistics/referrals?hospital_id=${hospitalId}`).then(r => r.data);
+  const createReferral = (data) => api.post('/api/logistics/referrals', data).then(r => r.data);
+  const acceptReferral = (id) => api.patch(`/api/logistics/referrals/${id}/accept`).then(r => r.data);
   const value = {
     user, token, loading, language, theme, t, socket, notifications,
     login, logout, changeLanguage, toggleTheme,
     getHospitals, getHospital,
     getBeds, assignBed, releaseBed,
     getPatients, admitPatient, updatePatient, dischargePatient,
-    getInventory, addInventory, updateInventory, restockInventory, requestRestock, deleteInventory,
-    getAlerts, resolveAlert,
+    getInventory, addInventory, updateInventory, restockInventory, requestRestock, logStockUsage, deleteInventory, runAIStockCheck,
+    getAlerts, resolveAlert, resolveAllAlerts,
     getAdminDashboard, getPHCDashboard,
     logAttendance, getDoctors,
+    getTransfers, createTransfer, dispatchTransfer, receiveTransfer,
+    getReferrals, createReferral, acceptReferral,
     isAdmin: user?.role === 'District_Admin',
-    isPHC: user?.role === 'PHC_Manager',
+    isPHC: user?.role === 'PHC_Manager' || user?.role === 'CHC_Manager',
     isReceptionist: user?.role === 'Receptionist',
     isInventoryManager: user?.role === 'Inventory_Manager',
     hospitalId: user?.hospital_id?._id || user?.hospital_id
