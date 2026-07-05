@@ -4,11 +4,10 @@ const { protect, adminOnly, phcOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/hospitals — all hospitals (admin) or own hospital (PHC)
+// GET /api/hospitals — all hospitals
 router.get('/', protect, phcOrAdmin, async (req, res) => {
   try {
-    const filter = req.user.role === 'District_Admin' ? {} : { _id: req.user.hospital_id };
-    const hospitals = await Hospital.find(filter).sort({ name: 1 });
+    const hospitals = await Hospital.find({}).sort({ name: 1 });
     res.json(hospitals);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -59,11 +59,27 @@ router.post('/', protect, receptionistAllowed, async (req, res) => {
 // PUT /api/patients/:id — update patient
 router.put('/:id', protect, receptionistAllowed, async (req, res) => {
   try {
+    const oldPatient = await Patient.findById(req.params.id);
+    if (!oldPatient) return res.status(404).json({ message: 'Patient not found' });
+
+    const newBedId = req.body.assigned_bed_id;
+    const oldBedId = oldPatient.assigned_bed_id ? oldPatient.assigned_bed_id.toString() : null;
+
+    // Handle bed change
+    if (newBedId !== oldBedId) {
+      if (oldBedId) {
+        await Bed.findByIdAndUpdate(oldBedId, { status: 'Available', current_patient_id: null });
+      }
+      if (newBedId) {
+        await Bed.findByIdAndUpdate(newBedId, { status: 'Occupied', current_patient_id: oldPatient._id });
+      }
+    }
+
     const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!patient) return res.status(404).json({ message: 'Patient not found' });
 
     const io = req.app.get('io');
     io.to(`hospital_${patient.hospital_id}`).emit('patient_updated', patient);
+    io.to(`hospital_${patient.hospital_id}`).emit('bed_updated');
     res.json(patient);
   } catch (err) {
     res.status(400).json({ message: err.message });

@@ -44,6 +44,69 @@ router.post('/', protect, phcOrAdmin, async (req, res) => {
   }
 });
 
+// PATCH /api/alerts/resolve-all — resolve all restock requests
+router.patch('/resolve-all', protect, adminOnly, async (req, res) => {
+  try {
+    const { severity } = req.query; // optional filter
+    const filter = {
+      is_resolved: false,
+      type: 'Restock-Request'
+    };
+    if (severity && severity !== 'All') {
+      filter.severity = severity;
+    }
+
+    const alerts = await Alert.find(filter);
+    const io = req.app.get('io');
+    let resolvedCount = 0;
+
+    for (const alert of alerts) {
+      alert.is_resolved = true;
+      alert.resolved_at = new Date();
+      alert.resolved_by = req.user.id;
+      await alert.save();
+      resolvedCount++;
+
+      io.to('admin_room').emit('alert_resolved', { id: alert._id });
+
+      // Auto-Restock logic
+      if (alert.metadata?.inventory_id) {
+        try {
+          const item = await Inventory.findById(alert.metadata.inventory_id);
+          if (item) {
+            const qty = Number(alert.metadata.quantity_requested) || 0;
+            if (qty > 0) {
+              item.current_stock += qty;
+              item.last_restocked = new Date();
+              if (item.current_stock > 0) item.zero_stock_since = null;
+              await item.save();
+
+              // Create notification for PHC
+              const phcAlert = await Alert.create({
+                hospital_id: item.hospital_id,
+                type: 'Restock-Approved',
+                severity: 'Low',
+                message: `Restock Approved: ${qty} ${item.medicine_name} arrived in stock.`,
+                metadata: { medicine_name: item.medicine_name }
+              });
+
+              const populatedAlert = await phcAlert.populate('hospital_id', 'name district');
+              io.to(`hospital_${item.hospital_id}`).emit('inventory_updated', item);
+              io.to(`hospital_${item.hospital_id}`).emit('new_alert', populatedAlert);
+            }
+          }
+        } catch (restockErr) {
+          console.error('Auto-restock failed during resolve-all:', restockErr);
+        }
+      }
+    }
+
+    res.json({ message: `Successfully resolved ${resolvedCount} restock requests.`, count: resolvedCount });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // PATCH /api/alerts/:id/resolve — resolve an alert
 router.patch('/:id/resolve', protect, phcOrAdmin, async (req, res) => {
   try {

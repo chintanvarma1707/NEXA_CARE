@@ -1,6 +1,7 @@
 const express = require('express');
 const Inventory = require('../models/Inventory');
 const Alert = require('../models/Alert');
+const StockUsage = require('../models/StockUsage');
 const { protect, phcOrAdmin, inventoryAllowed } = require('../middleware/auth');
 
 const router = express.Router();
@@ -141,6 +142,115 @@ router.post('/:id/request', protect, inventoryAllowed, async (req, res) => {
     io.to('admin_room').emit('new_alert', alert);
 
     res.status(201).json(alert);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/inventory/:hospitalId/usage-logs
+router.get('/:hospitalId/usage-logs', protect, inventoryAllowed, async (req, res) => {
+  try {
+    const logs = await StockUsage.find({ hospital_id: req.params.hospitalId })
+      .sort({ usage_date: -1 })
+      .populate('recorded_by', 'name role')
+      .limit(100);
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/inventory/:id/log-usage — explicitly log stock out
+router.post('/:id/log-usage', protect, inventoryAllowed, async (req, res) => {
+  try {
+    const { quantity_used, used_for, prescribed_by } = req.body;
+    const item = await Inventory.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Item not found' });
+    if (item.current_stock < quantity_used) {
+      return res.status(400).json({ message: 'Not enough stock available' });
+    }
+
+    // Update inventory
+    item.current_stock -= quantity_used;
+    item.usage_log.push({ date: new Date(), quantity_used });
+    if (item.usage_log.length > 90) item.usage_log = item.usage_log.slice(-90);
+    
+    if (item.current_stock === 0) {
+      item.zero_stock_since = new Date();
+      await Alert.create({
+        hospital_id: item.hospital_id,
+        type: 'Stock-Out',
+        severity: 'Critical',
+        message: `${item.medicine_name} is now completely out of stock!`,
+        metadata: { medicine_name: item.medicine_name, inventory_id: item._id }
+      });
+    }
+
+    await item.save();
+
+    // Create detailed log entry
+    const usageRecord = await StockUsage.create({
+      hospital_id: item.hospital_id,
+      inventory_id: item._id,
+      medicine_name: item.medicine_name,
+      quantity_used,
+      used_for,
+      prescribed_by: prescribed_by || '',
+      recorded_by: req.user.id
+    });
+
+    const io = req.app.get('io');
+    io.to(`hospital_${item.hospital_id}`).emit('inventory_updated', item);
+    io.to('admin_room').emit('inventory_updated', item);
+
+    res.status(201).json({ item, usageRecord });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /api/inventory/ai-stock-check/:hospitalId
+router.post('/ai-stock-check/:hospitalId', protect, inventoryAllowed, async (req, res) => {
+  try {
+    const items = await Inventory.find({ hospital_id: req.params.hospitalId });
+    let requestsGenerated = 0;
+
+    for (const item of items) {
+      if (item.current_stock < 100) {
+        // Check if a Restock-Request already exists for this medicine at this hospital
+        const existingAlert = await Alert.findOne({
+          hospital_id: item.hospital_id,
+          type: 'Restock-Request',
+          is_resolved: false,
+          'metadata.inventory_id': item._id
+        });
+
+        if (!existingAlert) {
+          // Automatically create a restock request for 500 units
+          const alert = await Alert.create({
+            hospital_id: item.hospital_id,
+            type: 'Restock-Request',
+            severity: 'High',
+            message: `🤖 AI Manual Scan: ${item.medicine_name} stock is low (${item.current_stock} left). Automated request for 500 ${item.unit || 'units'} raised.`,
+            metadata: {
+              medicine_name: item.medicine_name,
+              inventory_id: item._id,
+              quantity_requested: 500,
+              auto_generated_by_ai: true
+            }
+          });
+          requestsGenerated++;
+
+          const io = req.app.get('io');
+          if (io) {
+            io.to('admin_room').emit('new_alert', alert);
+            io.to(`hospital_${item.hospital_id}`).emit('new_alert', alert);
+          }
+        }
+      }
+    }
+
+    res.json({ message: 'AI Stock Check completed', requestsGenerated });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
