@@ -10,6 +10,7 @@ const PatientSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   address: { type: String, default: '' },
   diagnosis: { type: String, required: true, trim: true },
+  symptoms: { type: String, default: '' },
   admitted_date: { type: Date, default: Date.now },
   discharged_date: { type: Date, default: null },
   assigned_bed_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Bed', default: null },
