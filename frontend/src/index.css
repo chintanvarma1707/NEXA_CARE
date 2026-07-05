@@ -95,6 +95,12 @@
     box-shadow: 0 0 0 3px rgba(20, 184, 138, 0.12);
   }
 
+  /* Force native select dropdowns to have a dark background and visible text */
+  select.input-glass option {
+    background-color: #0f172a !important; /* slate-900 */
+    color: #f8fafc !important; /* slate-50 */
+  }
+
   /* Status badges */
   .badge-success { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30; }
   .badge-warning { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30; }
@@ -169,10 +175,7 @@
     @apply bg-slate-50 text-slate-900;
   }
 
-  /* Force light colors even if Tailwind media dark mode is stuck */
-  .light-theme [class*="bg-white"] {
-    background-color: #ffffff !important;
-  }
+  /* Removed over-aggressive bg-white rule */
   .light-theme [class*="bg-slate-50"] {
     background-color: #f8fafc !important;
   }
@@ -245,6 +248,7 @@
     @apply text-slate-900;
   }
 
+  .light-theme .text-white\/90 { @apply text-slate-800; }
   .light-theme .text-white\/80 { @apply text-slate-800; }
   .light-theme .text-white\/70 { @apply text-slate-700; }
   .light-theme .text-white\/60 { @apply text-slate-600; }
