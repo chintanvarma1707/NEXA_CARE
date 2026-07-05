@@ -6,8 +6,7 @@ import { useSmartHealth } from '../context/SmartHealthContext';
 const DEMO_CREDS = [
   { label: 'District Admin', email: 'admin@nexacare.gov.in', password: 'Admin@123', role: 'admin' },
   { label: 'PHC Manager (Hospital)', email: 'phc1@nexacare.gov.in', password: 'PHC@123', role: 'phc' },
-  { label: 'Receptionist', email: 'reception@nexacare.gov.in', password: 'Rec@123', role: 'phc' },
-  { label: 'Inventory Manager', email: 'inventory@nexacare.gov.in', password: 'Inv@123', role: 'phc' },
+  { label: 'CHC Manager (Hospital)', email: 'chc@nexacare.gov.in', password: 'CHC@123', role: 'chc' },
 ];
 
 export default function LoginPage() {
@@ -34,66 +33,104 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex bg-app">
-      {/* Left Panel — Branding */}
+      {/* Left Panel — Branding with Premium Mesh Gradient Background */}
       <motion.div
         initial={{ opacity: 0, x: -40 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6 }}
-        className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden"
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="hidden lg:flex flex-col justify-between w-[55%] p-16 relative overflow-hidden bg-[#050b14]"
       >
-        {/* Background orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-20 w-72 h-72 rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, #14b88a 0%, transparent 70%)' }} />
-          <div className="absolute bottom-32 right-16 w-56 h-56 rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #6366f1 0%, transparent 70%)' }} />
-          <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full opacity-10 -translate-x-1/2 -translate-y-1/2"
-            style={{ background: 'radial-gradient(circle, #14b88a 0%, transparent 60%)' }} />
+        {/* Animated Mesh Gradient Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 90, 0],
+              x: [0, 50, 0],
+              y: [0, -50, 0]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full mix-blend-screen filter blur-[100px]"
+            style={{ background: 'radial-gradient(circle, rgba(20,184,138,0.8) 0%, transparent 70%)' }} 
+          />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.5, 1],
+              rotate: [0, -90, 0],
+              x: [0, -50, 0],
+              y: [0, 50, 0]
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-[0%] right-[0%] w-[60%] h-[60%] rounded-full mix-blend-screen filter blur-[100px]"
+            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.6) 0%, transparent 70%)' }} 
+          />
+          <div className="absolute top-1/2 left-1/2 w-full h-full rounded-full opacity-30 -translate-x-1/2 -translate-y-1/2 filter blur-[120px]"
+            style={{ background: 'radial-gradient(circle, rgba(20,184,138,0.4) 0%, transparent 60%)' }} />
         </div>
+
+        {/* Abstract pattern overlay */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]"></div>
 
         {/* Logo */}
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-primary-500/20 border border-primary-500/40 flex items-center justify-center">
-              <Activity className="w-5 h-5 text-primary-400" />
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-primary-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(20,184,138,0.3)] backdrop-blur-md overflow-hidden p-1">
+              <img src="/logo.jpg" alt="Nexa Care Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="text-2xl font-bold font-display text-white">Nexa Care</span>
+            <span className="text-3xl font-extrabold font-display text-white tracking-tight">Nexa Care</span>
           </div>
-          <p className="text-primary-400 text-sm font-medium ml-13 pl-[52px]">SmartHealth Ecosystem</p>
+          <p className="text-primary-300 text-sm font-semibold tracking-widest uppercase ml-16">SmartHealth Ecosystem</p>
         </div>
 
         {/* Main copy */}
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 space-y-10 my-auto">
           <div>
-            <h1 className="text-5xl font-bold font-display text-white leading-tight mb-4">
-              Transforming
-              <span className="block text-gradient">Rural Healthcare</span>
-              with AI
-            </h1>
-            <p className="text-white/60 text-lg leading-relaxed">
-              Real-time inventory management, AI-driven forecasting, and smart redistribution for Primary Health Centres across Maharashtra.
-            </p>
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-6xl font-black font-display text-white leading-[1.1] mb-6"
+            >
+              {t('transformingRural')}
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-emerald-300 to-teal-200 drop-shadow-sm pb-2">
+                {t('ruralHealthcare')}
+              </span>
+              {t('withAi')}
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-white/70 text-xl leading-relaxed max-w-xl font-light"
+            >
+              {t('realTimeDesc')}
+            </motion.p>
           </div>
 
           {/* Feature pills */}
-          <div className="grid grid-cols-2 gap-3">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="grid grid-cols-2 gap-4 max-w-xl"
+          >
             {[
-              { icon: Zap, text: 'AI Demand Forecasting', color: 'text-yellow-400' },
-              { icon: Activity, text: 'Real-Time Bed Tracking', color: 'text-primary-400' },
-              { icon: Shield, text: 'Smart Redistribution', color: 'text-blue-400' },
-              { icon: Users, text: '3 Language Support', color: 'text-purple-400' }
-            ].map(({ icon: Icon, text, color }) => (
-              <div key={text} className="glass-card-sm p-3 flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${color} flex-shrink-0`} />
-                <span className="text-sm text-white/70 font-medium">{text}</span>
+              { icon: Zap, text: 'AI Demand Forecasting', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+              { icon: Activity, text: 'Real-Time Bed Tracking', color: 'text-primary-400', bg: 'bg-primary-400/10', border: 'border-primary-400/20' },
+              { icon: Shield, text: 'Smart Redistribution', color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
+              { icon: Users, text: 'Logistics & Referrals', color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' }
+            ].map(({ icon: Icon, text, color, bg, border }) => (
+              <div key={text} className={`p-4 rounded-2xl flex items-center gap-3 backdrop-blur-md border ${border} ${bg} transition-transform hover:-translate-y-1 duration-300`}>
+                <Icon className={`w-5 h-5 ${color} flex-shrink-0`} />
+                <span className="text-sm text-white font-medium tracking-wide">{text}</span>
               </div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* Footer */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 text-white/40 text-sm">
+        <div className="relative z-10 mt-auto pt-8 border-t border-white/10">
+          <div className="flex items-center gap-3 text-white/50 text-sm font-medium">
             <span className="pulse-dot" />
             <span>Government of Maharashtra — Health & Family Welfare Dept.</span>
           </div>
