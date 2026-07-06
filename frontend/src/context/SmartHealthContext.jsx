@@ -11,6 +11,10 @@ const SmartHealthContext = createContext(null);
 
 export function SmartHealthProvider({ children }) {
   const [user, setUser] = useState(null);
+  // Aggressively clear old localStorage token from previous versions
+  if (localStorage.getItem('nc_token')) {
+    localStorage.removeItem('nc_token');
+  }
   const [token, setToken] = useState(sessionStorage.getItem('nc_token') || null);
   const [language, setLanguage] = useState(localStorage.getItem('nc_lang') || 'en');
   const [theme, setTheme] = useState(localStorage.getItem('nc_theme') || 'dark');
