@@ -11,7 +11,7 @@ const SmartHealthContext = createContext(null);
 
 export function SmartHealthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('nc_token') || null);
+  const [token, setToken] = useState(sessionStorage.getItem('nc_token') || null);
   const [language, setLanguage] = useState(localStorage.getItem('nc_lang') || 'en');
   const [theme, setTheme] = useState(localStorage.getItem('nc_theme') || 'dark');
   const [socket, setSocket] = useState(null);
@@ -43,7 +43,7 @@ export function SmartHealthProvider({ children }) {
       const { token: newToken, user: newUser } = res.data;
       setToken(newToken);
       setUser(newUser);
-      localStorage.setItem('nc_token', newToken);
+      sessionStorage.setItem('nc_token', newToken);
       return { success: true, user: newUser };
     } catch (err) {
       return { success: false, error: err.response?.data?.message || 'Login failed' };
@@ -55,7 +55,7 @@ export function SmartHealthProvider({ children }) {
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('nc_token');
+    sessionStorage.removeItem('nc_token');
     if (socket) socket.disconnect();
   };
 
