@@ -71,6 +71,40 @@ export function SmartHealthProvider({ children }) {
 
   useEffect(() => { fetchMe(); }, []);
 
+  // ── Auto-Logout on Inactivity ──────────────────────────────────────────
+  useEffect(() => {
+    if (!token) return; // Only track when logged in
+
+    const INACTIVITY_TIMEOUT = 2.5 * 60 * 1000; // 2.5 minutes in milliseconds
+    let timeoutId;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setGlobalToast({
+          type: 'error',
+          title: 'Session Expired',
+          message: 'You have been automatically logged out due to inactivity.'
+        });
+        setTimeout(() => logout(), 2000); // Logout after showing toast
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    // Events that count as "activity"
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+    // Add listeners
+    events.forEach(event => document.addEventListener(event, resetTimer, true));
+    
+    // Initial start
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(event => document.removeEventListener(event, resetTimer, true));
+    };
+  }, [token]);
+
   // ── Socket.IO ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!token || !user) return;
