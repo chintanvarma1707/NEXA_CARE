@@ -590,7 +590,7 @@ export default function HospitalDashboard() {
         return (
           <div className="space-y-6">
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <FootfallChart />
               <div className="glass-card p-5">
                 <h3 className="section-title mb-4">
@@ -602,14 +602,14 @@ export default function HospitalDashboard() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <StatCard label={t('availableBeds')} value={data?.bed_summary?.available ?? 0} icon={BedDouble} color="bg-primary-500/20 text-primary-400" subtext={`of ${data?.bed_summary?.total ?? 0} total`} delay={0} />
               <StatCard label={t('totalPatients')} value={data?.patients?.length ?? 0} icon={Users} color="bg-blue-500/20 text-blue-400" subtext="Currently admitted" delay={0.05} />
               <StatCard label={t('criticalStock')} value={data?.inventory_summary?.critical ?? 0} icon={Package} color="bg-red-500/20 text-red-400" subtext="Out of stock" delay={0.1} />
             </div>
 
             {/* Quick actions */}
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-2 sm:gap-3 flex-wrap">
               <button onClick={() => setShowAdmit(true)} className="btn-primary flex items-center gap-2">
                 <UserPlus className="w-4 h-4" /> {t('admitPatient')}
               </button>
@@ -634,8 +634,8 @@ export default function HospitalDashboard() {
 
       case 'beds':
         return (
-          <div className="glass-card p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="glass-card p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
               <h2 className="section-title">
                 <BedDouble className="w-5 h-5 text-primary-400" />
                 {t('bedManagement')}
@@ -650,8 +650,8 @@ export default function HospitalDashboard() {
 
       case 'patients':
         return (
-          <div className="glass-card p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="glass-card p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6">
               <h2 className="section-title">
                 <Users className="w-5 h-5 text-blue-400" />
                 {t('patients')}
@@ -728,8 +728,8 @@ export default function HospitalDashboard() {
 
       case 'inventory':
         return (
-          <div className="glass-card p-6">
-            <h2 className="section-title mb-6">
+          <div className="glass-card p-4 sm:p-6">
+            <h2 className="section-title mb-4 sm:mb-6">
               <Package className="w-5 h-5 text-purple-400" />
               {t('inventory')}
             </h2>
@@ -780,19 +780,19 @@ export default function HospitalDashboard() {
     <div className="flex h-screen overflow-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={false} unreadAlerts={unreadAlerts} />
 
-      <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 pl-12 lg:pl-0"
+          className="mb-4 sm:mb-6 pl-14 lg:pl-0"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-start gap-3 justify-between">
             <div>
-              <h1 className="text-2xl font-bold font-display text-white">{data?.hospital?.name || 'PHC Dashboard'}</h1>
-              <p className="text-sm text-white/40">{data?.hospital?.type} • {data?.hospital?.district} • {data?.hospital?.location?.village}</p>
+              <h1 className="text-lg sm:text-2xl font-bold font-display text-white">{data?.hospital?.name || 'PHC Dashboard'}</h1>
+              <p className="text-xs sm:text-sm text-white/40">{data?.hospital?.type} • {data?.hospital?.district} • {data?.hospital?.location?.village}</p>
             </div>
-            <div className="ml-auto flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <NotificationBell />
               <div className="flex items-center gap-2">
                 <span className="pulse-dot" />

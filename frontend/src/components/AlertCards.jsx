@@ -56,7 +56,7 @@ export default function AlertCards({ alerts = [], onResolve, onResolveAll, showH
       {/* Controls */}
       {alerts.some(a => !a.is_resolved) && (
         <div className="flex flex-col gap-3 mb-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-2 sm:gap-3">
             <div className="flex flex-wrap gap-2">
               {['All', 'Critical', 'High', 'Medium', 'Low'].map(s => {
                 const isActive = filterSeverity === s;
@@ -66,7 +66,7 @@ export default function AlertCards({ alerts = [], onResolve, onResolveAll, showH
                                   : 'glass-card-sm text-white/50 hover:text-white border-transparent hover:border-white/10';
                 return (
                   <button key={s} onClick={() => setFilterSeverity(s)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all border ${activeClass}`}>
+                    className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs font-semibold transition-all border ${activeClass}`}>
                     {s}
                   </button>
                 );
@@ -75,7 +75,7 @@ export default function AlertCards({ alerts = [], onResolve, onResolveAll, showH
             {onResolveAll && active.some(a => a.type === 'Restock-Request') && (
               <button
                 onClick={() => onResolveAll(filterSeverity)}
-                className="btn-primary bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 border-none text-xs px-4 py-1.5 flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                className="btn-primary bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 border-none text-xs px-3 py-1.5 sm:px-4 flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
               >
                 <CheckCircle className="w-4 h-4" />
                 Accept All Restocks
@@ -118,8 +118,8 @@ export default function AlertCards({ alerts = [], onResolve, onResolveAll, showH
                   >
                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${sevCfg.accent}`} />
                     
-                    <div className="flex items-start gap-4">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${sevCfg.iconBg}`}>
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${sevCfg.iconBg}`}>
                         <Icon className={`w-5 h-5 ${sevCfg.text}`} />
                       </div>
                       

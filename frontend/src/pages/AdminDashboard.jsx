@@ -245,7 +245,7 @@ export default function AdminDashboard() {
         return (
           <div className="space-y-6">
             {/* Big stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <BigStat label={t('allHospitals')} value={overview.total_hospitals} icon={Building2} color="bg-accent-500/20 text-accent-500" gradient="linear-gradient(135deg, #6366f1, transparent)" />
               <BigStat label={t('totalBeds')} value={overview.total_beds} sub={`${overview.Occupied || 0} occupied`} icon={BedDouble} color="bg-primary-500/20 text-primary-400" gradient="linear-gradient(135deg, #14b88a, transparent)" />
               <BigStat label={t('totalPatients')} value={overview.total_patients} icon={Users} color="bg-blue-500/20 text-blue-400" gradient="linear-gradient(135deg, #3b82f6, transparent)" />
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
                   <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> {t('refresh')}
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {[
                   { label: t('occupancyRate'), value: `${overview.occupancy_rate || 0}%`, color: (overview.occupancy_rate || 0) > 85 ? '#ef4444' : '#14b88a', bg: (overview.occupancy_rate || 0) > 85 ? 'text-red-400' : 'text-primary-400' },
                   { label: t('criticalStock'), value: `${overview.critical_stock_items || 0}`, color: '#ef4444', bg: 'text-red-400' },
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
                 <Building2 className="w-5 h-5 text-accent-500" />
                 {t('allHospitals')}
               </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(data?.hospitals || []).map((h, i) => (
                   <HospitalCard key={h._id} hospital={h} delay={i * 0.08} />
                 ))}
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
             })()}
 
             {/* Alerts + Redistribution */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <div className="glass-card p-5">
                 <h3 className="section-title mb-4">
                   <Bell className="w-5 h-5 text-red-400" />
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
               <Building2 className="w-5 h-5 text-accent-500" />
               {t('allHospitals')}
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {(data?.hospitals || []).map((h, i) => (
                 <HospitalCard key={h._id} hospital={h} delay={i * 0.06} />
               ))}
@@ -408,19 +408,19 @@ export default function AdminDashboard() {
     <div className="flex h-screen overflow-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={true} unreadAlerts={unreadAlerts} />
 
-      <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 pl-12 lg:pl-0 flex items-center justify-between"
+          className="mb-6 pl-14 lg:pl-0 flex flex-wrap items-start gap-3 justify-between"
         >
           <div>
             <h1 className="text-2xl font-bold font-display text-white flex items-center gap-2">
               <Globe className="w-6 h-6 text-accent-500" />
               {t('districtOverview')}
             </h1>
-            <p className="text-sm text-white/40 mt-1">
+            <p className="text-xs sm:text-sm text-white/40 mt-1">
               Monitoring {overview.total_hospitals || 0} facilities • Pune & Nashik Districts
             </p>
           </div>
