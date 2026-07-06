@@ -52,8 +52,8 @@ export default function Sidebar({ activeTab, setActiveTab, isAdmin = false, unre
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={`flex items-center gap-3 p-5 border-b border-white/10 ${collapsed && !mobileOpen ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 rounded-xl bg-white border border-primary-500/40 flex items-center justify-center flex-shrink-0 overflow-hidden p-0.5">
-          <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
+        <div className="w-9 h-9 rounded-xl bg-white border border-primary-500/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain scale-[1.6]" />
         </div>
         {(!collapsed || mobileOpen) && (
           <div>

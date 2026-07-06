@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const HospitalSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   code: { type: String, unique: true, uppercase: true, trim: true },
-  type: { type: String, enum: ['PHC', 'CHC', 'District Hospital', 'Sub-Centre'], default: 'PHC' },
+  type: { type: String, enum: ['PHC', 'CHC', 'District Hospital', 'Sub-Centre', 'Warehouse'], default: 'PHC' },
   district: { type: String, required: true },
   state: { type: String, default: 'Maharashtra' },
   location: {
@@ -14,7 +14,7 @@ const HospitalSchema = new mongoose.Schema({
     lat: { type: Number, default: 18.5204 },
     lng: { type: Number, default: 73.8567 }
   },
-  total_beds: { type: Number, required: true, min: 1 },
+  total_beds: { type: Number, required: true, min: 0 },
   contact_phone: { type: String, default: '' },
   doctor_count: { type: Number, default: 0 },
   nurse_count: { type: Number, default: 0 },

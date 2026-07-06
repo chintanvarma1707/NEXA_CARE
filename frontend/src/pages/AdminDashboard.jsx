@@ -11,6 +11,7 @@ import AlertCards from '../components/AlertCards';
 import InventoryTable from '../components/InventoryTable';
 import RedistributionCard from '../components/RedistributionCard';
 import NotificationBell from '../components/NotificationBell';
+import AdminWarehouseInventory from '../components/AdminWarehouseInventory';
 
 // ── Stat Card ─────────────────────────────────────────────────────────────
 function BigStat({ label, value, sub, icon: Icon, color, gradient }) {
@@ -359,12 +360,8 @@ export default function AdminDashboard() {
 
       case 'inventory':
         return (
-          <div className="glass-card p-6">
-            <h2 className="section-title mb-6">
-              <Package className="w-5 h-5 text-purple-400" />
-              {t('inventory')} — {t('allHospitals')}
-            </h2>
-            <InventoryTable items={data?.critical_stock || []} readOnly={true} />
+          <div className="p-1">
+            <AdminWarehouseInventory items={data?.warehouse_inventory || []} />
           </div>
         );
 

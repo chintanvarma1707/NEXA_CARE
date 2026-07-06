@@ -74,10 +74,10 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-white border border-primary-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(20,184,138,0.3)] backdrop-blur-md overflow-hidden p-1">
-              <img src="/logo.jpg" alt="Nexa Care Logo" className="w-full h-full object-contain" />
+            <div className="w-12 h-12 rounded-2xl bg-white border border-primary-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(20,184,138,0.3)] backdrop-blur-md overflow-hidden">
+              <img src="/logo.jpg" alt="Nexa Care Logo" className="w-full h-full object-contain scale-[1.6]" />
             </div>
-            <span className="text-3xl font-extrabold font-display text-white tracking-tight">Nexa Care</span>
+            <span className="text-3xl font-extrabold font-display text-slate-50 tracking-tight">Nexa Care</span>
           </div>
           <p className="text-primary-300 text-sm font-semibold tracking-widest uppercase ml-16">SmartHealth Ecosystem</p>
         </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-6xl font-black font-display text-white leading-[1.1] mb-6"
+              className="text-6xl font-black font-display text-slate-50 leading-[1.1] mb-6"
             >
               {t('transformingRural')}
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-emerald-300 to-teal-200 drop-shadow-sm pb-2">
@@ -101,7 +101,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-white/70 text-xl leading-relaxed max-w-xl font-light"
+              className="text-slate-300 text-xl leading-relaxed max-w-xl font-light"
             >
               {t('realTimeDesc')}
             </motion.p>
@@ -122,15 +122,15 @@ export default function LoginPage() {
             ].map(({ icon: Icon, text, color, bg, border }) => (
               <div key={text} className={`p-4 rounded-2xl flex items-center gap-3 backdrop-blur-md border ${border} ${bg} transition-transform hover:-translate-y-1 duration-300`}>
                 <Icon className={`w-5 h-5 ${color} flex-shrink-0`} />
-                <span className="text-sm text-white font-medium tracking-wide">{text}</span>
+                <span className="text-sm text-slate-50 font-medium tracking-wide">{text}</span>
               </div>
             ))}
           </motion.div>
         </div>
 
         {/* Footer */}
-        <div className="relative z-10 mt-auto pt-8 border-t border-white/10">
-          <div className="flex items-center gap-3 text-white/50 text-sm font-medium">
+        <div className="relative z-10 mt-auto pt-8 border-t border-[rgba(255,255,255,0.1)]">
+          <div className="flex items-center gap-3 text-slate-400 text-sm font-medium">
             <span className="pulse-dot" />
             <span>Government of Maharashtra — Health & Family Welfare Dept.</span>
           </div>
@@ -147,8 +147,10 @@ export default function LoginPage() {
         >
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <Activity className="w-7 h-7 text-primary-400" />
-            <span className="text-xl font-bold text-white font-display">Nexa Care</span>
+            <div className="w-10 h-10 rounded-xl bg-white border border-primary-400/30 flex items-center justify-center overflow-hidden">
+              <img src="/logo.jpg" alt="Nexa Care" className="w-full h-full object-contain scale-[1.6]" />
+            </div>
+            <span className="text-2xl font-extrabold text-white font-display">Nexa Care</span>
           </div>
 
           <div className="glass-card p-8">
@@ -228,7 +230,7 @@ export default function LoginPage() {
                   <button
                     key={cred.email}
                     onClick={() => fillDemo(cred)}
-                    className="w-full flex items-center justify-between glass-card-sm px-4 py-2.5 hover:bg-white/[0.08] transition-colors group"
+                    className="w-full flex items-center justify-between glass-card-sm px-4 py-2.5 transition-colors group"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className={`w-2 h-2 rounded-full ${cred.role === 'admin' ? 'bg-accent-500' : 'bg-primary-400'}`} />

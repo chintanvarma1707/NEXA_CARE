@@ -210,22 +210,32 @@
   }
 
   .light-theme .glass-card {
-    @apply bg-white/80 border border-slate-200;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+    @apply bg-white border border-slate-200/80;
+    box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0,0,0,0.02);
   }
 
   .light-theme .glass-card-sm {
-    @apply bg-white/70 border border-slate-200;
+    @apply bg-white border border-slate-200/80 transition-all duration-200;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  }
+
+  .light-theme .glass-card-sm:hover {
+    @apply bg-slate-50 border-slate-300 shadow-sm;
   }
 
   .light-theme .glass-card-hover:hover {
     @apply bg-white border-slate-300;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 16px 50px -10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 
   .light-theme .input-glass {
-    @apply bg-white border border-slate-300 text-slate-900 placeholder-slate-400;
+    @apply bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 transition-all duration-200;
+  }
+  
+  .light-theme .input-glass:focus {
+    @apply bg-white border-primary-400 outline-none;
+    box-shadow: 0 0 0 4px rgba(20, 184, 138, 0.1);
   }
 
   .light-theme .btn-glass {
@@ -272,6 +282,21 @@
 
   .light-theme .modal-overlay {
     background: rgba(255, 255, 255, 0.8);
+  }
+
+  /* Warehouse inventory cards light mode */
+  .light-theme .warehouse-card {
+    @apply bg-white border border-slate-100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .light-theme .warehouse-card:hover {
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+  }
+  .light-theme .section-title {
+    @apply text-slate-800;
+  }
+  .light-theme .badge-neutral {
+    @apply bg-slate-100 text-slate-600 border border-slate-200;
   }
 }
 

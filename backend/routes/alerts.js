@@ -1,6 +1,7 @@
 const express = require('express');
 const Alert = require('../models/Alert');
 const Inventory = require('../models/Inventory');
+const Hospital = require('../models/Hospital');
 const { protect, phcOrAdmin, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
@@ -81,12 +82,22 @@ router.patch('/resolve-all', protect, adminOnly, async (req, res) => {
               if (item.current_stock > 0) item.zero_stock_since = null;
               await item.save();
 
+              // Deduct from Warehouse
+              const warehouse = await Hospital.findOne({ type: 'Warehouse' });
+              if (warehouse) {
+                const whItem = await Inventory.findOne({ hospital_id: warehouse._id, medicine_name: item.medicine_name });
+                if (whItem) {
+                  whItem.current_stock = Math.max(0, whItem.current_stock - qty);
+                  await whItem.save();
+                }
+              }
+
               // Create notification for PHC
               const phcAlert = await Alert.create({
                 hospital_id: item.hospital_id,
                 type: 'Restock-Approved',
                 severity: 'Low',
-                message: `Restock Approved: ${qty} ${item.medicine_name} arrived in stock.`,
+                message: `Restock Approved: ${qty} ${item.medicine_name} arrived from Central Warehouse.`,
                 metadata: { medicine_name: item.medicine_name }
               });
 
@@ -132,12 +143,22 @@ router.patch('/:id/resolve', protect, phcOrAdmin, async (req, res) => {
             if (item.current_stock > 0) item.zero_stock_since = null;
             await item.save();
 
+            // Deduct from Warehouse
+            const warehouse = await Hospital.findOne({ type: 'Warehouse' });
+            if (warehouse) {
+              const whItem = await Inventory.findOne({ hospital_id: warehouse._id, medicine_name: item.medicine_name });
+              if (whItem) {
+                whItem.current_stock = Math.max(0, whItem.current_stock - qty);
+                await whItem.save();
+              }
+            }
+
             // Create notification for PHC
             const phcAlert = await Alert.create({
               hospital_id: item.hospital_id,
               type: 'Restock-Approved',
               severity: 'Low',
-              message: `Restock Approved: ${qty} ${item.medicine_name} arrived in stock.`,
+              message: `Restock Approved: ${qty} ${item.medicine_name} arrived from Central Warehouse.`,
               metadata: { medicine_name: item.medicine_name }
             });
 

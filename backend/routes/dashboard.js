@@ -13,6 +13,10 @@ const AI_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 // GET /api/dashboard/admin — aggregated data for District Admin
 router.get('/admin', protect, adminOnly, async (req, res) => {
   try {
+    const warehouse = await Hospital.findOne({ type: 'Warehouse' });
+    const warehouse_inventory = warehouse 
+      ? await Inventory.find({ hospital_id: warehouse._id }).populate('hospital_id', 'name')
+      : [];
     const hospitals = await Hospital.find({ is_active: true });
     const hospitalIds = hospitals.map(h => h._id);
 
@@ -115,7 +119,8 @@ router.get('/admin', protect, adminOnly, async (req, res) => {
       hospitals: hospitalSummaries,
       critical_stock: criticalStock.slice(0, 10),
       alerts: activeAlerts,
-      redistribution: redistributionRecs
+      redistribution: redistributionRecs,
+      warehouse_inventory
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
