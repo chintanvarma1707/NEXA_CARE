@@ -154,6 +154,7 @@ export function SmartHealthProvider({ children }) {
   const getBeds = (hospitalId) => api.get(`/api/beds/${hospitalId}`).then(r => r.data);
   const assignBed = (bedId, patientId) => api.patch(`/api/beds/${bedId}/assign`, { patient_id: patientId }).then(r => r.data);
   const releaseBed = (bedId) => api.patch(`/api/beds/${bedId}/release`).then(r => r.data);
+  const updateBedStatus = (id, status) => api.patch(`/api/beds/${id}/status`, { status }).then(r => r.data);
 
   const getPatients = (hospitalId, status) => api.get(`/api/patients/${hospitalId}${status ? `?status=${status}` : ''}`).then(r => r.data);
   const admitPatient = (data) => api.post('/api/patients', data).then(r => r.data);
@@ -194,7 +195,7 @@ export function SmartHealthProvider({ children }) {
     user, token, loading, language, theme, t, socket, notifications,
     login, logout, changeLanguage, toggleTheme,
     getHospitals, getHospital,
-    getBeds, assignBed, releaseBed,
+    getBeds, assignBed, releaseBed, updateBedStatus,
     getPatients, admitPatient, updatePatient, dischargePatient,
     getInventory, addInventory, updateInventory, restockInventory, requestRestock, logStockUsage, deleteInventory, runAIStockCheck,
     getAlerts, resolveAlert, resolveAllAlerts,

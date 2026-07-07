@@ -399,7 +399,7 @@ function ReferralsTab({ hospitalId, isCHC, allHospitals = [], patients = [] }) {
   
   // For PHC creating a referral
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ patient_name: '', patient_age: '', patient_gender: 'Male', reason: '', to_hospital: '' });
+  const [form, setForm] = useState({ patient_id: '', patient_name: '', patient_age: '', patient_gender: 'Male', reason: '', to_hospital: '' });
 
   const loadData = useCallback(async () => {
     try {
@@ -447,7 +447,7 @@ function ReferralsTab({ hospitalId, isCHC, allHospitals = [], patients = [] }) {
               onChange={e => {
                 const p = patients.find(pat => pat._id === e.target.value);
                 if (p) {
-                  setForm(prev => ({...prev, patient_name: p.name, patient_age: p.age, patient_gender: p.gender}));
+                  setForm(prev => ({...prev, patient_id: p._id, patient_name: p.name, patient_age: p.age, patient_gender: p.gender}));
                 }
               }}
             >
@@ -503,7 +503,7 @@ function ReferralsTab({ hospitalId, isCHC, allHospitals = [], patients = [] }) {
 
 // ── Main Hospital Dashboard ────────────────────────────────────────────────────
 export default function HospitalDashboard() {
-  const { t, hospitalId, getPHCDashboard, admitPatient, updatePatient, dischargePatient, updateInventory, restockInventory, requestRestock, logStockUsage, getDoctors, resolveAlert, logAttendance, socket, getHospitals } = useSmartHealth();
+  const { t, hospitalId, getPHCDashboard, admitPatient, updatePatient, dischargePatient, updateInventory, restockInventory, requestRestock, logStockUsage, getDoctors, resolveAlert, logAttendance, socket, getHospitals, updateBedStatus } = useSmartHealth();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [data, setData] = useState(null);
@@ -539,7 +539,7 @@ export default function HospitalDashboard() {
   // Real-time updates via socket
   useEffect(() => {
     if (!socket) return;
-    const handlers = ['bed_updated', 'patient_admitted', 'patient_discharged', 'inventory_updated', 'new_alert'];
+    const handlers = ['bed_updated', 'patient_admitted', 'patient_discharged', 'inventory_updated', 'new_alert', 'patient_updated', 'logistics_update'];
     handlers.forEach(event => socket.on(event, () => loadData()));
     return () => handlers.forEach(event => socket.off(event));
   }, [socket, loadData]);
@@ -627,7 +627,18 @@ export default function HospitalDashboard() {
                 <BedDouble className="w-5 h-5 text-primary-400" />
                 {t('bedManagement')}
               </h3>
-              <BedGrid beds={data?.beds || []} onDischarge={async (patientId) => { await dischargePatient(patientId); loadData(); }} />
+              <BedGrid 
+                beds={data?.beds || []} 
+                onDischarge={async (patientId) => { await dischargePatient(patientId); loadData(); }}
+                onMaintenanceDone={async (bedId) => {
+                  try {
+                    await updateBedStatus(bedId, 'Available');
+                    loadData();
+                  } catch (err) {
+                    console.error("Failed to update bed status", err);
+                  }
+                }} 
+              />
             </div>
           </div>
         );
@@ -644,7 +655,19 @@ export default function HospitalDashboard() {
                 <Plus className="w-4 h-4" /> {t('admitPatient')}
               </button>
             </div>
-            <BedGrid beds={data?.beds || []} onAssignClick={() => setShowAdmit(true)} onDischarge={async (patientId) => { await dischargePatient(patientId); loadData(); }} />
+            <BedGrid 
+              beds={data?.beds || []} 
+              onAssignClick={() => setShowAdmit(true)} 
+              onDischarge={async (patientId) => { await dischargePatient(patientId); loadData(); }}
+              onMaintenanceDone={async (bedId) => {
+                try {
+                  await updateBedStatus(bedId, 'Available');
+                  loadData();
+                } catch (err) {
+                  console.error("Failed to update bed status", err);
+                }
+              }}
+            />
           </div>
         );
 
@@ -678,7 +701,14 @@ export default function HospitalDashboard() {
                   {(data?.patients || []).map(p => (
                     <tr key={p._id}>
                       <td className="font-mono text-xs text-white/50">{p.patient_id}</td>
-                      <td className="font-semibold text-white">{p.name}</td>
+                      <td>
+                        {p.is_referred && (
+                          <div className="text-[10px] font-bold text-accent-400 bg-accent-500/10 px-2 py-0.5 rounded border border-accent-500/20 mb-1 inline-block">
+                            Referred to {p.referred_to} (Reason: {p.referral_reason})
+                          </div>
+                        )}
+                        <div className="font-semibold text-white">{p.name}</div>
+                      </td>
                       <td className="text-white/60">{p.age}y / {p.gender}</td>
                       <td>
                         <div className="badge-neutral mb-1">{p.diagnosis}</div>
@@ -699,17 +729,19 @@ export default function HospitalDashboard() {
                           >
                             {t('edit')}
                           </button>
-                          <button 
-                            onClick={async () => {
-                              if (window.confirm(`Discharge ${p.name}? This will free up their bed automatically.`)) {
-                                await dischargePatient(p._id);
-                                loadData();
-                              }
-                            }}
-                            className="btn-glass text-xs py-1 px-3 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                          >
-                            {t('dischargePatient')}
-                          </button>
+                          {!p.is_referred && (
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm(`Discharge ${p.name}? This will free up their bed automatically.`)) {
+                                  await dischargePatient(p._id);
+                                  loadData();
+                                }
+                              }}
+                              className="btn-glass text-xs py-1 px-3 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                            >
+                              {t('dischargePatient')}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

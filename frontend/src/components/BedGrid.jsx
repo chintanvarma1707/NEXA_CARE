@@ -139,7 +139,7 @@ function PatientModal({ patient, bed, onClose, onDischarge }) {
   );
 }
 
-export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDischarge }) {
+export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDischarge, onMaintenanceDone }) {
   const { t } = useSmartHealth();
   const [selectedBed, setSelectedBed] = useState(null);
   const [toast, setToast] = useState(null);
@@ -293,6 +293,15 @@ export default function BedGrid({ beds = [], onBedUpdate, onAssignClick, onDisch
                                 {patient.diagnosis || 'Pending Diagnosis'}
                               </div>
                             </>
+                          ) : bed.status === 'Maintenance' ? (
+                            <div className="flex flex-col items-center justify-center h-full pt-2">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); if (onMaintenanceDone) onMaintenanceDone(bed._id); }}
+                                className="w-full text-[10px] font-bold bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30 px-2 py-1.5 rounded-lg hover:bg-yellow-500/30 hover:border-yellow-500/50 transition-colors shadow-sm"
+                              >
+                                Mark Available
+                              </button>
+                            </div>
                           ) : (
                             <div className="text-sm font-bold text-slate-400 dark:text-white/40">
                               {t('bedAvailable')}
