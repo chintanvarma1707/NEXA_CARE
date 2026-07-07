@@ -25,9 +25,9 @@ async function seed() {
   // ─── HOSPITALS ───────────────────────────────────────────────────────────
   const hospitals = await Hospital.insertMany([
     {
-      name: 'PHC Hadapsar', code: 'PHC-HDP', type: 'PHC', district: 'Pune', state: 'Maharashtra',
-      location: { address: 'Hadapsar, Pune', village: 'Hadapsar', tehsil: 'Haveli', pincode: '411028', lat: 18.5089, lng: 73.9260 },
-      total_beds: 20, contact_phone: '020-26876543', doctor_count: 4, nurse_count: 8,
+      name: 'Dholka PHC', code: 'PHC-DLK', type: 'PHC', district: 'Ahmedabad', state: 'Gujarat',
+      location: { address: 'Dholka, Ahmedabad', village: 'Dholka', tehsil: 'Dholka', pincode: '382225', lat: 22.7276, lng: 72.4646 },
+      total_beds: 20, contact_phone: '079-26876543', doctor_count: 4, nurse_count: 8,
       attendance_log: [
         { date: new Date(Date.now() - 2*86400000), doctors_present: 1, doctors_total: 4 },
         { date: new Date(Date.now() - 1*86400000), doctors_present: 1, doctors_total: 4 },
@@ -35,9 +35,9 @@ async function seed() {
       ]
     },
     {
-      name: 'CHC Shirur', code: 'CHC-SHR', type: 'CHC', district: 'Pune', state: 'Maharashtra',
-      location: { address: 'Shirur, Pune', village: 'Shirur', tehsil: 'Shirur', pincode: '412210', lat: 18.8274, lng: 74.3677 },
-      total_beds: 30, contact_phone: '02138-222345', doctor_count: 6, nurse_count: 12,
+      name: 'Ahmedabad CHC', code: 'CHC-AHD', type: 'CHC', district: 'Ahmedabad', state: 'Gujarat',
+      location: { address: 'Ahmedabad City', village: 'Ahmedabad', tehsil: 'Ahmedabad', pincode: '380001', lat: 23.0225, lng: 72.5714 },
+      total_beds: 30, contact_phone: '079-22234567', doctor_count: 6, nurse_count: 12,
       attendance_log: [
         { date: new Date(Date.now() - 2*86400000), doctors_present: 5, doctors_total: 6 },
         { date: new Date(Date.now() - 1*86400000), doctors_present: 6, doctors_total: 6 },
@@ -45,25 +45,38 @@ async function seed() {
       ]
     },
     {
-      name: 'PHC Igatpuri', code: 'PHC-IGT', type: 'PHC', district: 'Nashik', state: 'Maharashtra',
-      location: { address: 'Igatpuri, Nashik', village: 'Igatpuri', tehsil: 'Igatpuri', pincode: '422403', lat: 19.6916, lng: 73.5630 },
-      total_beds: 15, contact_phone: '02553-244001', doctor_count: 3, nurse_count: 6,
+      name: 'Viramgam PHC', code: 'PHC-VRM', type: 'PHC', district: 'Ahmedabad', state: 'Gujarat',
+      location: { address: 'Viramgam, Ahmedabad', village: 'Viramgam', tehsil: 'Viramgam', pincode: '382150', lat: 23.1189, lng: 72.0463 },
+      total_beds: 15, contact_phone: '02715-244001', doctor_count: 3, nurse_count: 6,
       attendance_log: [
         { date: new Date(Date.now() - 2*86400000), doctors_present: 3, doctors_total: 3 },
         { date: new Date(Date.now() - 1*86400000), doctors_present: 3, doctors_total: 3 },
         { date: new Date(), doctors_present: 2, doctors_total: 3 }
       ]
+    },
+    {
+      name: 'District Central Warehouse', code: 'WH-AHD', type: 'Warehouse', district: 'Ahmedabad', state: 'Gujarat',
+      location: { address: 'Ahmedabad Industrial Estate', village: 'Ahmedabad', tehsil: 'Ahmedabad', pincode: '380002', lat: 23.0300, lng: 72.5800 },
+      total_beds: 0, contact_phone: '079-11111111', doctor_count: 0, nurse_count: 0,
+      attendance_log: []
     }
   ]);
-  console.log(`🏥 Created ${hospitals.length} hospitals`);
+  console.log(`🏥 Created ${hospitals.length} hospitals (including warehouse)`);
 
   // ─── BEDS ────────────────────────────────────────────────────────────────
   const allBeds = [];
   for (const h of hospitals) {
-    const wards = ['General', 'Deluxe', 'Super Deluxe'];
+    const wards = h.type === 'CHC' 
+      ? ['Emergency', 'ICU', 'Trauma', 'NICU', 'General', 'Deluxe', 'Super Deluxe']
+      : ['General', 'Deluxe', 'Super Deluxe'];
     let bedNum = 0;
     for (const ward of wards) {
-      const count = 20; // 20 beds each as requested
+      let count = 10; // Default 10 beds for CHC wards
+      if (h.type === 'PHC') {
+        if (ward === 'Super Deluxe') count = 10;
+        else if (ward === 'Deluxe') count = 10;
+        else if (ward === 'General') count = 20;
+      }
       for (let i = 1; i <= count; i++) {
         bedNum++;
         allBeds.push({
@@ -84,11 +97,12 @@ async function seed() {
   const occupiedBeds = beds.filter(b => b.status === 'Occupied');
   const patients = [];
 
-  for (let i = 0; i < Math.min(occupiedBeds.length, names.length); i++) {
+  for (let i = 0; i < occupiedBeds.length; i++) {
     const bed = occupiedBeds[i];
+    const patientName = `${names[i % names.length]} ${i + 1}`;
     const patient = new Patient({
       hospital_id: bed.hospital_id,
-      name: names[i],
+      name: patientName,
       age: 20 + Math.floor(Math.random() * 60),
       gender: i % 3 === 0 ? 'Female' : 'Male',
       diagnosis: diagnoses[i % diagnoses.length],
@@ -97,7 +111,7 @@ async function seed() {
       status: 'Admitted',
       blood_group: ['A+','B+','O+','AB+'][i % 4],
       attending_doctor: `Dr. ${['Mehta','Shah','Patel','Joshi'][i % 4]}`,
-      address: 'Village Rd, Maharashtra'
+      address: 'Village Rd, Gujarat'
     });
     patients.push(patient);
   }
@@ -130,27 +144,42 @@ async function seed() {
 
   const inventoryItems = [];
   for (const h of hospitals) {
-    for (let m = 0; m < medicines.length; m++) {
-      const med = medicines[m];
-      const stock = m === 2 ? 0 : m === 4 ? 3 : 10 + Math.floor(Math.random() * 90);
-      const threshold = 10;
-      const usageLog = Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 86400000),
-        quantity_used: Math.floor(Math.random() * 5) + 1
-      }));
-
-      inventoryItems.push({
-        hospital_id: h._id,
-        medicine_name: med.name,
-        category: med.cat,
-        batch_number: `BT-${Date.now()}-${m}`,
-        current_stock: stock,
-        unit: med.unit,
-        minimum_threshold: threshold,
-        expiry_date: new Date(Date.now() + (m === 9 ? 30 : 365) * 86400000),
-        zero_stock_since: stock === 0 ? new Date(Date.now() - 72 * 60 * 60 * 1000) : null,
-        usage_log: usageLog
+    if (h.type === 'Warehouse') {
+      medicines.forEach((med) => {
+        inventoryItems.push({
+          hospital_id: h._id,
+          medicine_name: med.name,
+          category: med.cat,
+          current_stock: 5000 + Math.floor(Math.random() * 5000),
+          minimum_threshold: 1000,
+          unit: med.unit,
+          batch_number: `WH-${Date.now()}`,
+          expiry_date: new Date(Date.now() + 365 * 86400000)
+        });
       });
+    } else {
+      for (let m = 0; m < medicines.length; m++) {
+        const med = medicines[m];
+        const stock = m === 2 ? 0 : m === 4 ? 3 : 10 + Math.floor(Math.random() * 90);
+        const threshold = 10;
+        const usageLog = Array.from({ length: 30 }, (_, i) => ({
+          date: new Date(Date.now() - (29 - i) * 86400000),
+          quantity_used: Math.floor(Math.random() * 5) + 1
+        }));
+
+        inventoryItems.push({
+          hospital_id: h._id,
+          medicine_name: med.name,
+          category: med.cat,
+          batch_number: `BT-${Date.now()}-${m}`,
+          current_stock: stock,
+          unit: med.unit,
+          minimum_threshold: threshold,
+          expiry_date: new Date(Date.now() + (m === 9 ? 30 : 365) * 86400000),
+          zero_stock_since: stock === 0 ? new Date(Date.now() - 72 * 60 * 60 * 1000) : null,
+          usage_log: usageLog
+        });
+      }
     }
   }
   await Inventory.insertMany(inventoryItems);
@@ -161,40 +190,40 @@ async function seed() {
     {
       hospital_id: hospitals[0]._id,
       type: 'Stock-Out', severity: 'Critical', is_resolved: false,
-      message: '🔴 Chloroquine 250mg has been out of stock for 72 hours at PHC Hadapsar. Urgent resupply needed.',
-      metadata: { medicine_name: 'Chloroquine 250mg', hospital_name: 'PHC Hadapsar' }
+      message: '🔴 Chloroquine 250mg has been out of stock for 72 hours at Dholka PHC. Urgent resupply needed.',
+      metadata: { medicine_name: 'Chloroquine 250mg', hospital_name: 'Dholka PHC' }
     },
     {
       hospital_id: hospitals[0]._id,
       type: 'Underperformance', severity: 'High', is_resolved: false,
-      message: '⚠️ Doctor attendance has been below 50% for 3 consecutive days at PHC Hadapsar.',
-      metadata: { hospital_name: 'PHC Hadapsar' }
+      message: '⚠️ Doctor attendance has been below 50% for 3 consecutive days at Dholka PHC.',
+      metadata: { hospital_name: 'Dholka PHC' }
     },
     {
       hospital_id: hospitals[1]._id,
       type: 'Low-Stock', severity: 'Medium', is_resolved: false,
-      message: '🟡 Metronidazole 400mg stock critically low at CHC Shirur (3 strips remaining).',
-      metadata: { medicine_name: 'Metronidazole 400mg', hospital_name: 'CHC Shirur' }
+      message: '🟡 Metronidazole 400mg stock critically low at Ahmedabad CHC (3 strips remaining).',
+      metadata: { medicine_name: 'Metronidazole 400mg', hospital_name: 'Ahmedabad CHC' }
     },
     {
       hospital_id: hospitals[2]._id,
       type: 'AI-Forecast', severity: 'Medium', is_resolved: false,
-      message: '🤖 AI Prediction: ORS Sachets expected to run out in 4 days at PHC Igatpuri based on current usage trends.',
-      metadata: { medicine_name: 'ORS Sachets', days_remaining: 4, hospital_name: 'PHC Igatpuri' }
+      message: '🤖 AI Prediction: ORS Sachets expected to run out in 4 days at Viramgam PHC based on current usage trends.',
+      metadata: { medicine_name: 'ORS Sachets', days_remaining: 4, hospital_name: 'Viramgam PHC' }
     }
   ]);
   console.log(`🚨 Created seed alerts`);
 
   // ─── USERS ───────────────────────────────────────────────────────────────
   const users = [
-    { name: 'District Admin', email: 'admin@nexacare.gov.in', password_hash: 'Admin@123', role: 'District_Admin', district: 'Pune' },
-    { name: 'Dr. Ramesh Patil', email: 'phc1@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[0]._id, district: 'Pune' },
-    { name: 'Receptionist Anjali', email: 'reception@nexacare.gov.in', password_hash: 'Rec@123', role: 'Receptionist', hospital_id: hospitals[0]._id, district: 'Pune' },
-    { name: 'Inventory Manager Rohit', email: 'inventory@nexacare.gov.in', password_hash: 'Inv@123', role: 'Inventory_Manager', hospital_id: hospitals[0]._id, district: 'Pune' },
-    { name: 'Dr. Mehta', email: 'mehta@nexacare.gov.in', password_hash: 'Doc@123', role: 'Doctor', hospital_id: hospitals[0]._id, district: 'Pune' },
-    { name: 'Dr. Shah', email: 'shah@nexacare.gov.in', password_hash: 'Doc@123', role: 'Doctor', hospital_id: hospitals[0]._id, district: 'Pune' },
-    { name: 'Dr. Sunita Joshi', email: 'phc2@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[1]._id, district: 'Pune' },
-    { name: 'Dr. Anil Shinde', email: 'phc3@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[2]._id, district: 'Nashik' }
+    { name: 'District Admin', email: 'admin@nexacare.gov.in', password_hash: 'Admin@123', role: 'District_Admin', district: 'Ahmedabad' },
+    { name: 'Dr. Ramesh Patil', email: 'phc1@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[0]._id, district: 'Ahmedabad' },
+    { name: 'Receptionist Anjali', email: 'reception@nexacare.gov.in', password_hash: 'Rec@123', role: 'Receptionist', hospital_id: hospitals[0]._id, district: 'Ahmedabad' },
+    { name: 'Inventory Manager Rohit', email: 'inventory@nexacare.gov.in', password_hash: 'Inv@123', role: 'Inventory_Manager', hospital_id: hospitals[0]._id, district: 'Ahmedabad' },
+    { name: 'Dr. Mehta', email: 'mehta@nexacare.gov.in', password_hash: 'Doc@123', role: 'Doctor', hospital_id: hospitals[0]._id, district: 'Ahmedabad' },
+    { name: 'Dr. Shah', email: 'shah@nexacare.gov.in', password_hash: 'Doc@123', role: 'Doctor', hospital_id: hospitals[0]._id, district: 'Ahmedabad' },
+    { name: 'Dr. Sunita Joshi', email: 'chc@nexacare.gov.in', password_hash: 'CHC@123', role: 'PHC_Manager', hospital_id: hospitals[1]._id, district: 'Ahmedabad' },
+    { name: 'Dr. Anil Shinde', email: 'phc3@nexacare.gov.in', password_hash: 'PHC@123', role: 'PHC_Manager', hospital_id: hospitals[2]._id, district: 'Ahmedabad' }
   ];
 
   for (const u of users) {
