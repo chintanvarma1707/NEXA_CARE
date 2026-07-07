@@ -17,7 +17,10 @@ const PatientSchema = new mongoose.Schema({
   status: { type: String, enum: ['Admitted', 'Discharged', 'Transferred', 'Critical'], default: 'Admitted' },
   blood_group: { type: String, enum: ['A+','A-','B+','B-','AB+','AB-','O+','O-','Unknown'], default: 'Unknown' },
   attending_doctor: { type: String, default: '' },
-  notes: { type: String, default: '' }
+  notes: { type: String, default: '' },
+  is_referred: { type: Boolean, default: false },
+  referred_to: { type: String, default: '' },
+  referral_reason: { type: String, default: '' }
 }, { timestamps: true });
 
 PatientSchema.pre('save', async function(next) {

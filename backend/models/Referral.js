@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const ReferralSchema = new mongoose.Schema({
+  patient_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient' },
   patient_name: { type: String, required: true },
   patient_age: { type: Number, required: true },
   patient_gender: { type: String, required: true },

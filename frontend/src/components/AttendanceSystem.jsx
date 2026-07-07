@@ -8,6 +8,7 @@ const AttendanceSystem = () => {
   const { user, hospitalId, t } = useSmartHealth();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [isScanning, setIsScanning] = useState(false);
   const [scannedDoctor, setScannedDoctor] = useState(null);
@@ -299,10 +300,24 @@ const AttendanceSystem = () => {
           </div>
 
           {/* Doctors Roster */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 flex flex-col gap-4">
+            {/* Search Bar */}
+            <div className="glass-card-sm p-2 flex items-center border border-white/10">
+              <input 
+                type="text" 
+                placeholder="Search doctors by name or specialization..." 
+                className="bg-transparent border-none outline-none text-sm text-white placeholder:text-white/30 px-3 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               <AnimatePresence>
-                {doctors.map((doc, idx) => {
+                {doctors.filter(doc => 
+                  doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  doc.specialization.toLowerCase().includes(searchQuery.toLowerCase())
+                ).map((doc, idx) => {
                   const status = doc.today_status || 'Not Marked';
                   const progress = getProgress(doc.availability_start, doc.availability_end);
                   const isPresent = status === 'Present';
