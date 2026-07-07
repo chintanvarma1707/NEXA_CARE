@@ -5,8 +5,8 @@ import { useSmartHealth } from '../context/SmartHealthContext';
 
 const DEMO_CREDS = [
   { label: 'District Admin', email: 'admin@nexacare.gov.in', password: 'Admin@123', role: 'admin' },
-  { label: 'PHC Manager (Hospital)', email: 'phc1@nexacare.gov.in', password: 'PHC@123', role: 'phc' },
-  { label: 'CHC Manager (Hospital)', email: 'chc@nexacare.gov.in', password: 'CHC@123', role: 'chc' },
+  { label: 'PHC Manager (Dholka PHC)', email: 'phc1@nexacare.gov.in', password: 'PHC@123', role: 'phc' },
+  { label: 'CHC Manager (Ahmedabad CHC)', email: 'chc@nexacare.gov.in', password: 'CHC@123', role: 'chc' },
 ];
 
 export default function LoginPage() {
@@ -132,7 +132,7 @@ export default function LoginPage() {
         <div className="relative z-10 mt-auto pt-8 border-t border-[rgba(255,255,255,0.1)]">
           <div className="flex items-center gap-3 text-slate-400 text-sm font-medium">
             <span className="pulse-dot" />
-            <span>Government of Maharashtra — Health & Family Welfare Dept.</span>
+            <span>Government of Gujarat — Health & Family Welfare Dept.</span>
           </div>
         </div>
       </motion.div>

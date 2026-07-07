@@ -138,7 +138,8 @@ Instructions:
 
       const fullPrompt = `${systemPrompt}\n\nRecent Chat:\n${chatHistory}\n\nUser: ${userMessage}\nAssistant:`;
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/chat`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: fullPrompt })
