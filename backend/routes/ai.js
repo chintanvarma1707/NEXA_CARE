@@ -15,7 +15,7 @@ router.post('/chat', async (req, res) => {
       return res.json({ text: "I'm currently running in offline demo mode. Based on the data, the hospital is functioning normally. Please check the dashboard for specific metrics." });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key=${apiKey}`;
     
     const response = await axios.post(url, {
       contents: [{ parts: [{ text: prompt }] }]
