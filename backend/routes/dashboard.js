@@ -88,7 +88,7 @@ router.get('/admin', protect, adminOnly, async (req, res) => {
           minimum_threshold: i.minimum_threshold
         }))
       };
-      const aiRes = await axios.post(`${AI_URL}/api/ai/redistribute`, aiPayload, { timeout: 5000 });
+      const aiRes = await axios.post(`${AI_URL}/api/ai/redistribute`, aiPayload, { timeout: 500 });
       redistributionRecs = aiRes.data.recommendations || [];
     } catch (_) {
       // AI graceful fallback - generate realistic mock redistribution recommendations
@@ -166,7 +166,7 @@ router.get('/phc/:hospitalId', protect, phcOrAdmin, async (req, res) => {
           usage_log: i.usage_log.slice(-30)
         }))
       };
-      const aiRes = await axios.post(`${AI_URL}/api/ai/forecast`, aiPayload, { timeout: 5000 });
+      const aiRes = await axios.post(`${AI_URL}/api/ai/forecast`, aiPayload, { timeout: 500 });
       forecasts = aiRes.data.predictions || [];
     } catch (_) {
       // AI graceful fallback - generate realistic mock forecasts based on actual inventory

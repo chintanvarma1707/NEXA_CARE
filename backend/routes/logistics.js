@@ -4,6 +4,8 @@ const { protect, requireRole } = require('../middleware/auth');
 const Transfer = require('../models/Transfer');
 const Referral = require('../models/Referral');
 const Inventory = require('../models/Inventory');
+const Patient = require('../models/Patient');
+const Bed = require('../models/Bed');
 
 // ================= TRANSFERS =================
 
@@ -154,8 +156,28 @@ router.post('/referrals', protect, async (req, res) => {
       .populate('from_hospital', 'name type')
       .populate('to_hospital', 'name type');
 
+    if (req.body.patient_id) {
+      const patient = await Patient.findById(req.body.patient_id);
+      if (patient) {
+        // Free up the bed at PHC
+        if (patient.assigned_bed_id) {
+          await Bed.findByIdAndUpdate(patient.assigned_bed_id, {
+            status: 'Available',
+            current_patient_id: null
+          });
+        }
+        
+        patient.is_referred = true;
+        patient.referred_to = populatedReferral.to_hospital.name;
+        patient.referral_reason = req.body.reason;
+        patient.assigned_bed_id = null;
+        await patient.save();
+      }
+    }
+
     const io = req.app.get('io');
     io.emit('logistics_update');
+    io.emit('patient_updated'); // Trigger dashboard refresh for patients
 
     res.status(201).json(populatedReferral);
   } catch (err) {
@@ -171,6 +193,40 @@ router.patch('/referrals/:id/accept', protect, async (req, res) => {
       .populate('to_hospital', 'name type');
 
     const io = req.app.get('io');
+
+    if (referral.patient_id) {
+      const patient = await Patient.findById(referral.patient_id);
+      if (patient) {
+        let assignedBedId = null;
+        
+        // Auto-admit to ICU if requested
+        if (referral.reason && referral.reason.toLowerCase().includes('icu')) {
+          const icuBed = await Bed.findOne({
+            hospital_id: referral.to_hospital._id,
+            ward: 'ICU',
+            status: 'Available'
+          });
+          
+          if (icuBed) {
+            icuBed.status = 'Occupied';
+            icuBed.current_patient_id = patient._id;
+            await icuBed.save();
+            assignedBedId = icuBed._id;
+            io.emit('bed_updated');
+          }
+        }
+        
+        // Transfer patient to CHC
+        patient.hospital_id = referral.to_hospital._id;
+        patient.is_referred = false;
+        patient.referred_to = '';
+        patient.referral_reason = '';
+        patient.assigned_bed_id = assignedBedId;
+        await patient.save();
+        io.emit('patient_updated');
+      }
+    }
+
     io.emit('logistics_update');
 
     res.json(referral);
