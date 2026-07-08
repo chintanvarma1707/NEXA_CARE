@@ -13,7 +13,7 @@ router.get('/:hospitalId', protect, inventoryAllowed, async (req, res) => {
     const filter = { hospital_id: req.params.hospitalId };
     if (category) filter.category = category;
 
-    let items = await Inventory.find(filter).sort({ medicine_name: 1 });
+    let items = await Inventory.find(filter).sort({ medicine_name: 1 }).lean();
 
     if (status === 'critical') items = items.filter(i => i.current_stock === 0);
     if (status === 'low') items = items.filter(i => i.current_stock > 0 && i.current_stock <= i.minimum_threshold);

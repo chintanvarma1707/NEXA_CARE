@@ -13,11 +13,11 @@ const AI_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 // GET /api/dashboard/admin — aggregated data for District Admin
 router.get('/admin', protect, adminOnly, async (req, res) => {
   try {
-    const warehouse = await Hospital.findOne({ type: 'Warehouse' });
+    const warehouse = await Hospital.findOne({ type: 'Warehouse' }).lean();
     const warehouse_inventory = warehouse 
-      ? await Inventory.find({ hospital_id: warehouse._id }).populate('hospital_id', 'name')
+      ? await Inventory.find({ hospital_id: warehouse._id }).populate('hospital_id', 'name').lean()
       : [];
-    const hospitals = await Hospital.find({ is_active: true });
+    const hospitals = await Hospital.find({ is_active: true }).lean();
     const hospitalIds = hospitals.map(h => h._id);
 
     // Aggregate beds
@@ -37,17 +37,17 @@ router.get('/admin', protect, adminOnly, async (req, res) => {
     const criticalStock = await Inventory.find({
       hospital_id: { $in: hospitalIds },
       $expr: { $lte: ['$current_stock', '$minimum_threshold'] }
-    }).populate('hospital_id', 'name district');
+    }).populate('hospital_id', 'name district').lean();
 
     // Active alerts
     const activeAlerts = await Alert.find({ hospital_id: { $in: hospitalIds }, is_resolved: false })
       .populate('hospital_id', 'name district')
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(20).lean();
 
     // Per-hospital summary
     const hospitalSummaries = await Promise.all(hospitals.map(async (h) => {
-      const beds = await Bed.find({ hospital_id: h._id });
+      const beds = await Bed.find({ hospital_id: h._id }).lean();
       const available = beds.filter(b => b.status === 'Available').length;
       const occupied = beds.filter(b => b.status === 'Occupied').length;
       const lowStock = await Inventory.countDocuments({
@@ -77,7 +77,7 @@ router.get('/admin', protect, adminOnly, async (req, res) => {
     let redistributionRecs = [];
     try {
       const invData = await Inventory.find({ hospital_id: { $in: hospitalIds } })
-        .populate('hospital_id', 'name district');
+        .populate('hospital_id', 'name district').lean();
       const aiPayload = {
         hospitals: hospitalSummaries.map(h => ({ id: h._id, name: h.name })),
         inventory: invData.map(i => ({
@@ -134,10 +134,10 @@ router.get('/phc/:hospitalId', protect, phcOrAdmin, async (req, res) => {
     if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
 
     const [beds, patients, inventory, alerts] = await Promise.all([
-      Bed.find({ hospital_id: hospital._id }).populate('current_patient_id', 'name age gender diagnosis admitted_date patient_id blood_group attending_doctor'),
-      Patient.find({ hospital_id: hospital._id, status: 'Admitted' }).populate('assigned_bed_id', 'bed_number ward'),
-      Inventory.find({ hospital_id: hospital._id }).sort({ medicine_name: 1 }),
-      Alert.find({ hospital_id: hospital._id, is_resolved: false }).sort({ createdAt: -1 }).limit(10)
+      Bed.find({ hospital_id: hospital._id }).populate('current_patient_id', 'name age gender diagnosis admitted_date patient_id blood_group attending_doctor').lean(),
+      Patient.find({ hospital_id: hospital._id, status: 'Admitted' }).populate('assigned_bed_id', 'bed_number ward').lean(),
+      Inventory.find({ hospital_id: hospital._id }).sort({ medicine_name: 1 }).lean(),
+      Alert.find({ hospital_id: hospital._id, is_resolved: false }).sort({ createdAt: -1 }).limit(10).lean()
     ]);
 
     const bedSummary = {

@@ -9,7 +9,7 @@ async function updateCHC() {
   const chcUser = await User.findOne({ email: 'phc2@nexacare.gov.in' });
   if (chcUser) {
     chcUser.email = 'chc@nexacare.gov.in';
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(8);
     chcUser.password_hash = await bcrypt.hash('CHC@123', salt);
     await chcUser.save();
     console.log('Updated CHC User credentials');

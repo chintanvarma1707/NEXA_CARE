@@ -396,6 +396,7 @@ function ReferralsTab({ hospitalId, isCHC, allHospitals = [], patients = [] }) {
   const { getReferrals, createReferral, acceptReferral, t } = useSmartHealth();
   const [referrals, setReferrals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   // For PHC creating a referral
   const [showForm, setShowForm] = useState(false);
@@ -414,6 +415,12 @@ function ReferralsTab({ hospitalId, isCHC, allHospitals = [], patients = [] }) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     await createReferral({ ...form, from_hospital: hospitalId });
@@ -430,11 +437,16 @@ function ReferralsTab({ hospitalId, isCHC, allHospitals = [], patients = [] }) {
           <Activity className="w-5 h-5 text-accent-400" />
           {isCHC ? t('incomingReferrals') : t('patientReferrals')}
         </h2>
-        {!isCHC && (
-          <button onClick={() => setShowForm(!showForm)} className="btn-primary text-sm flex items-center gap-2">
-            <Plus className="w-4 h-4" /> {t('newReferral')}
+        <div className="flex items-center gap-2">
+          <button onClick={handleRefresh} disabled={refreshing} className="btn-glass text-sm flex items-center gap-2">
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> {t('refresh')}
           </button>
-        )}
+          {!isCHC && (
+            <button onClick={() => setShowForm(!showForm)} className="btn-primary text-sm flex items-center gap-2">
+              <Plus className="w-4 h-4" /> {t('newReferral')}
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && !isCHC && (
@@ -770,12 +782,24 @@ export default function HospitalDashboard() {
               onUpdate={updateInventory}
               onRestock={async (id, d) => { await handleRestock(id, d); }}
               onRequest={async (id, d) => {
-                await requestRestock(id, d);
-                loadData();
+                // Optimistic UI update
+                setData(prev => ({
+                  ...prev,
+                  inventory: prev.inventory.map(item => 
+                    item._id === id ? { ...item, stock_status: 'Requested' } : item
+                  )
+                }));
+                requestRestock(id, d).then(() => loadData()).catch(() => loadData());
               }}
               onLogUsage={async (id, d) => {
-                await logStockUsage(id, d);
-                loadData();
+                // Optimistic UI update
+                setData(prev => ({
+                  ...prev,
+                  inventory: prev.inventory.map(item => 
+                    item._id === id ? { ...item, current_stock: Math.max(0, item.current_stock - d.quantity_used) } : item
+                  )
+                }));
+                logStockUsage(id, d).then(() => loadData()).catch(() => loadData());
               }}
               forecasts={data?.forecasts || []}
               patients={data?.patients || []}
