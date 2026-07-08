@@ -79,7 +79,7 @@ export function SmartHealthProvider({ children }) {
   useEffect(() => {
     if (!token) return; // Only track when logged in
 
-    const INACTIVITY_TIMEOUT = 2.5 * 60 * 1000; // 2.5 minutes in milliseconds
+    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
     let timeoutId;
 
     const resetTimer = () => {
