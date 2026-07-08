@@ -4,6 +4,8 @@ import { UserCheck, Clock, UserX, Plus, Calendar, ScanFace, Camera, Brain, Check
 import { useSmartHealth } from '../context/SmartHealthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const AttendanceSystem = () => {
   const { user, hospitalId, t } = useSmartHealth();
   const [doctors, setDoctors] = useState([]);
@@ -36,7 +38,7 @@ const AttendanceSystem = () => {
     if (!hospitalId) return;
     try {
       setLoading(true);
-      const docsRes = await axios.get(`http://localhost:5000/api/doctors/${hospitalId}`);
+      const docsRes = await axios.get(`${API_URL}/api/doctors/${hospitalId}`);
       setDoctors(docsRes.data);
     } catch (err) {
       console.error(err);
@@ -52,7 +54,7 @@ const AttendanceSystem = () => {
   const handleAddDoctor = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/doctors', { ...newDoctor, hospital_id: hospitalId });
+      await axios.post(`${API_URL}/api/doctors`, { ...newDoctor, hospital_id: hospitalId });
       setShowAddDoctor(false);
       fetchData();
     } catch (err) {
@@ -63,7 +65,7 @@ const AttendanceSystem = () => {
   const markAttendance = async (doctorId, status) => {
     try {
       setDoctors(docs => docs.map(d => d._id === doctorId ? { ...d, today_status: status } : d));
-      await axios.post('http://localhost:5000/api/doctors/attendance', {
+      await axios.post(`${API_URL}/api/doctors/attendance`, {
         doctor_id: doctorId, hospital_id: hospitalId, date: new Date().toISOString(), status, marked_by: user._id
       });
     } catch (err) {
@@ -76,7 +78,7 @@ const AttendanceSystem = () => {
       setLoading(true);
       for (const doc of PRESET_DOCTORS) {
         if (doctors.find(d => d.name === doc.name)) continue;
-        await axios.post('http://localhost:5000/api/doctors', {
+        await axios.post(`${API_URL}/api/doctors`, {
           name: doc.name, specialization: doc.spec, availability_start: '09:00', availability_end: '17:00',
           lunch_start: '13:00', lunch_end: '14:00', working_days: ['Mon','Tue','Wed','Thu','Fri','Sat'], hospital_id: hospitalId
         });

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSmartHealth } from '../context/SmartHealthContext';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const NotificationBell = () => {
   const { user, socket } = useSmartHealth();
   const [alerts, setAlerts] = useState([]);
@@ -22,7 +24,7 @@ const NotificationBell = () => {
 
   const fetchAlerts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/alerts');
+      const res = await axios.get(`${API_URL}/api/alerts`);
       const filteredAlerts = user?.role === 'Admin' 
         ? res.data // Admin sees all alerts
         : res.data.filter(a => a.hospital_id === user?.hospital_id); // PHC sees own alerts
@@ -55,7 +57,7 @@ const NotificationBell = () => {
 
   const markAsResolved = async (alertId) => {
     try {
-      await axios.patch(`http://localhost:5000/api/alerts/${alertId}/resolve`);
+      await axios.patch(`${API_URL}/api/alerts/${alertId}/resolve`);
       setAlerts(alerts.map(a => a._id === alertId ? { ...a, is_resolved: true } : a));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
